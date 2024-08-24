@@ -3,7 +3,7 @@ Fork of the Lua Discord Bot made by D4LM.
 Developer: D4LM
 ## How to start: 
 ### Dependencies:
-*Python: https://www.python.org/downloads/ (Should be preinstalled on Ubuntu 22.04)
+Markup: *Python: https://www.python.org/downloads/ (Should be preinstalled on Ubuntu 22.04)
 *Discord.py (You do not need voice model):
     *Linux: "python3 -m pip install -U discord.py"
     *Windows: "py -3 -m pip install -U discord.py"
