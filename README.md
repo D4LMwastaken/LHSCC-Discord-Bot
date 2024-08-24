@@ -1,4 +1,4 @@
-# Version 2.5 of the Python Discord Bot. 
+# Version 2.6 of the Python Discord Bot. 
 Fork of the Lua Discord Bot made by D4LM.
 Developer: D4LM
 ## How to start: 
@@ -25,9 +25,9 @@ Developer: D4LM
         1. Create two enviormental variables, one for Gemini API Key and another for your Discord Bot API Key.
         2. Go to terminal and type in "python3 DiscordBot2.5.py"
     * Steps for Windows 10 or 11
-        1. Go to command prompt or powershell and type in "python .\DiscordBot2.5.py"
+        1. Go to command prompt or powershell and type in "python .\DiscordBot2.6.py"
         OR
-        In command prompt or powershell, type in "py .\DiscordBot2.5.py" 
+        In command prompt or powershell, type in "py .\DiscordBot2.6.py" 
     * Steps for MacOS
         1. Go to Google and search up how to execute a Python file.
 ### Issues:
