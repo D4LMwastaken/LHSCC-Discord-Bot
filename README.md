@@ -31,7 +31,7 @@ Developer: D4LM
     * Steps for MacOS
         1. Go to Google and search up how to execute a Python file.
 ### Issues:
-Please report it in the Github issues tab
+   Please report it in the Github issues tab
     * Developer contact information:
         * To find me in person, go to Largo High School and ask for the Coding Club's treasurer.
         * To find me online, in Github create a issue and give me the question.
