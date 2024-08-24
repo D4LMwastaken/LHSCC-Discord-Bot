@@ -31,10 +31,10 @@ Developer: D4LM
     * Steps for MacOS
         1. Go to Google and search up how to execute a Python file.
 ### Issues:
-   Please report it in the Github issues tab
-    * Developer contact information:
-        * To find me in person, go to Largo High School and ask for the Coding Club's treasurer.
-        * To find me online, in Github create a issue and give me the question.
+   * Please report it in the Github issues tab
+   * Developer contact information:
+      * To find me in person, go to Largo High School and ask for the Coding Club's treasurer.
+      * To find me online, in Github create a issue and give me the question.
 ### Changelog: 
    * Version 2.5: "First Release. No changes made to this file from the last version. From the Lua Discord Bot 2.5
         added/removed/modified:Google Gemini integration.
