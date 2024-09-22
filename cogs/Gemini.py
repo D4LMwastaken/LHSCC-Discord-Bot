@@ -1,17 +1,15 @@
-import os  # Built in module in Python that is necessary to get the .env file.
-
-import google.generativeai as genai  # Import the necessary module that the
+import os
+import discord
+from discord.ext import commands
+import google.generativeai as genai
 
 from dotenv import load_dotenv
 
-load_dotenv()  # take environment variables from .env.
+load_dotenv()
 
-# !Ask Gemini command and this function library to work. Website: https://ai.google.dev/gemini-api
-# Install Website: https://ai.google.dev/gemini-api/docs/quickstart?lang=python
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')  # Environmental variable that you should have got from Google AI Studio.
-
-genai.configure(api_key=GOOGLE_API_KEY)  # Tells the module which one of your variables is the Google AI Keu
+genai.configure(api_key=GOOGLE_API_KEY)
 
 
 def genai_question(question):  # Function used in the main script
@@ -46,3 +44,22 @@ def genai_question_pro(question):
     else:
         print(response.text)
         return response.text
+
+
+class Gemini(commands.Cog):
+    def __init__(self, bot):
+        self.client = bot
+
+    gemini = discord.SlashCommandGroup("gemini", "Commands for the Gemini AI")
+
+    @gemini.command(name="ask", description="Ask Gemini a question")
+    async def ask_gemini(self, ctx, question: str):
+        await ctx.respond(genai_question(question))
+
+    @gemini.command(name="ask_pro", description="Ask Gemini Pro Model a question")
+    async def ask_gemini_pro(self, ctx, question: str):
+        await ctx.respond(genai_question_pro(question))
+
+
+def setup(bot):
+    bot.add_cog(Gemini(bot))
