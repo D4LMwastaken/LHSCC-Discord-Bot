@@ -49,10 +49,10 @@ For running the Discord Bot, here are the minimum specification & recommended sp
 |------------------|--------------------------------------------------|------------------------------------------------------------|
 | Operating System | Any that supports Python.                        | Ubuntu 24.04 (Noble Numbat) or any that are still updated. |
 | CPU              | x86 & Arm Based.                                 | At least Intel Core i5-5200u or better.                    |
-| GPU              | Any as long as it has IGPU.                      | Intel HD Graphics 55000 or better.                         |
-| Ram              | 4 MB (Without including OS.                      | 6 GB DDR3L 1600mhz or better.                              |
-| Storage          | 200 MB (Without including OS.                    | 384 GB of SSD Sata Storage or better.                      |
-| Network          | 5 MB/s of download speed 1 MB/s of upload speed. | 300 MB/s of download speed or 10 MB/s of Upload Speed.     |
+| GPU              | Any as long as it has IGPU.                      | Intel HD Graphics 5500 or better.                         |
+| Ram              | 4 MB (Without including OS.                      | 6 GB DDR3L 1600MHz or better.                              |
+| Storage          | 200 MB (Without including OS.                    | 384 GB of SSD Sata storage or better.                      |
+| Network          | 5 MB/s of download speed 1 MB/s of upload speed. | 300 MB/s of download speed & 10 MB/s of upload Speed.     |
 
 ## Features
 * Pre-Built Commands
