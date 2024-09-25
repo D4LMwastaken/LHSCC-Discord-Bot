@@ -1,7 +1,8 @@
-# Version 2.9 of the Python Discord Bot. 
-Fork of the Lua Discord Bot made by D4LM.
-Developer: D4LM
-## Going to add these stuff soon... (need to update a lot...)
+# D4LM's Largo High School Coding Club Discord Bot
+A Discord Bot integrated into the Largo High School Coding Club's Discord Server. Actively helps the club run, ultimately allowing people like me (D4LM) avoid overwork by sending some of the workload to this Discord Bot.
+
+## Showcase:
+<>
 
 ## TODO
 * Add stuff to README.MD such as instructions to run & install...
