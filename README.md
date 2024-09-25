@@ -28,7 +28,7 @@ A Discord Bot integrated into the Largo High School Coding Club's Discord Server
 * Code Contribution
 
 ## Why do I need D4LM's LHSCC Discord Bot?
-One of the problems that I have with running a club that is very small is nobody will distribute the workload. For example, my sponsor for my club deos not play a role in the club. 
+One of the problems that I have with running a club that is very small is nobody will distribute the workload. For example, my sponsor for my club deos not play a huge role in the club. 
 
 These issues can be mitigated by finding a new sponsor and/or forcing others to do more work. This usually will lead to the collapse of the club very quickly.
 
