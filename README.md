@@ -2,9 +2,9 @@
 A Discord Bot integrated into the Largo High School Coding Club's Discord Server. Actively helps the club run, ultimately allowing people like me (D4LM) avoid overwork by sending some of the workload to this Discord Bot.
 
 ## Showcase:
-![The user asking what is the meaning of coding.](https://github.com/D4LMwastaken/LHSCC-Discord-Bot/blob/d4b7c9b56a938987d889a892b2edab84d4ec4cae/photos/WhatIsTheMeaningOfCoding.png)
+![The user asking what is the meaning of coding.](photos/WhatIsTheMeaningOfCoding.png)
 
-![The slash command toolbar for the bot.](https://github.com/D4LMwastaken/LHSCC-Discord-Bot/blob/ac7bbd314c5395039a7e84ef7d6d7891030b762b/photos/ComandPanelDiscordBot.png)
+![The slash command toolbar for the bot.](photos/ComandPanelDiscordBot.png)
 
 ## Looking for maintainers & co-developers
 * If you are interested go to one of the Largo High School Coding Club meetings & talk with one of the leaders.
@@ -49,10 +49,10 @@ For running the Discord Bot, here are the minimum specification & recommended sp
 |------------------|--------------------------------------------------|------------------------------------------------------------|
 | Operating System | Any that supports Python.                        | Ubuntu 24.04 (Noble Numbat) or any that are still updated. |
 | CPU              | x86 & Arm Based.                                 | At least Intel Core i5-5200u or better.                    |
-| GPU              | Any as long as it has IGPU.                      | Intel HD Graphics 5500 or better.                         |
+| GPU              | Any as long as it has IGPU.                      | Intel HD Graphics 5500 or better.                          |
 | Ram              | 4 MB (Without including OS.                      | 6 GB DDR3L 1600MHz or better.                              |
 | Storage          | 200 MB (Without including OS.                    | 384 GB of SSD Sata storage or better.                      |
-| Network          | 5 MB/s of download speed 1 MB/s of upload speed. | 300 MB/s of download speed & 10 MB/s of upload Speed.     |
+| Network          | 5 MB/s of download speed 1 MB/s of upload speed. | 300 MB/s of download speed & 10 MB/s of upload Speed.      |
 
 ## Features
 * Pre-Built Commands
