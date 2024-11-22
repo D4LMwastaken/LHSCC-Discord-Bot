@@ -11,21 +11,21 @@ A Discord Bot integrated into the Largo High School Coding Club's Discord Server
 * We need people like you to help create new ideas, maintain this bot so that D4LM is not overworked making this bot.
 
 ## Index
-* Why do I need D4LM's LHSCC Discord Bot?
-  * Specifications required to run it or use it
-* Installing D4LM's LHSCC Discord Bot for your own purposes
-  * Windows
-  * Linux
-  * MacOS
-  * ChromeOS
-* Post-installation
-* Configuration
-  * Creation of new slash commands
-* How to run D4LM's LHSCC Discord Bot
-* Troubleshooting
-* Discussion
-* Donate
-* Code Contribution
+* [Why do I need D4LM's LHSCC Discord Bot?](#why-do-i-need-d4lms-lhscc-discord-bot)
+  * [Supported devices](#supported-architecture--devices)
+* [Installing D4LM's LHSCC Discord Bot for your own purposes](#installing-d4lms-lhscc-discord-bot)
+  * [Windows](#windows-)
+  * [Linux](#linux-macos-and-chromeos)
+  * [MacOS](#linux-macos-and-chromeos)
+  * [ChromeOS](#linux-macos-and-chromeos)
+* [Post-installation](#post-installation)
+* [Configuration](#configuration)
+  * [Creation of new slash command](#creation-of-new-slash-commands)
+* [Troubleshooting](#troubleshooting)
+* [Discussion](#discussion)
+* [Donate](#donate)
+* [Code Contribution](#code-contribution)
+* [TODO](#todo)
 
 ## Why do I need D4LM's LHSCC Discord Bot?
 One of the problems that I have with running a club that is very small is nobody will distribute the workload. For example, my sponsor for my club deos not play a huge role in the club. 
@@ -40,7 +40,7 @@ Please note: I would not recommend installing other Discord Bots as this one has
 
 One bot that does not conflict with D4LM's LHSCC Discord Bot **as of right now** is Crypt's Discord Bot.
 
-### Supported architecture & devices
+### Supported devices
 Only devices that support Discord are supported using the bot. You may check this [Discord Article](https://support.discord.com/hc/en-us/articles/213491697-What-are-the-OS-system-requirements-for-Discord).
 
 For running the Discord Bot, here are the minimum specification & recommended specifications:
@@ -49,7 +49,7 @@ For running the Discord Bot, here are the minimum specification & recommended sp
 |------------------|--------------------------------------------------|------------------------------------------------------------|
 | Operating System | Any that supports Python.                        | Ubuntu 24.04 (Noble Numbat) or any that are still updated. |
 | CPU              | x86 & Arm Based.                                 | At least Intel Core i5-5200u or better.                    |
-| GPU              | Any as long as it has IGPU.                      | Intel HD Graphics 5500 or better.                          |
+| GPU              | Any as long as it has iGPU.                      | Intel HD Graphics 5500 or better.                          |
 | Ram              | 4 MB (Without including OS.                      | 6 GB DDR3L 1600MHz or better.                              |
 | Storage          | 200 MB (Without including OS.                    | 384 GB of SSD Sata storage or better.                      |
 | Network          | 5 MB/s of download speed 1 MB/s of upload speed. | 300 MB/s of download speed & 10 MB/s of upload Speed.      |
@@ -70,8 +70,52 @@ For running the Discord Bot, here are the minimum specification & recommended sp
 
 ## Installing D4LM's LHSCC Discord Bot
 
+### Windows 
+* Install Python [here](https://www.python.org/).
+* Install [Vscode](https://code.visualstudio.com/) or your preferred coding editor or IDE.
+#### Install all dependencies
+```PowerShell
+pip install python-dotenv py-cord google-generativeai
+```
+* Create a .env file containing this:
+``` 
+DISCORD_BOT_TOKEN=
+GOOGLE_API_KEY=
+```
+* **Note: You must fill this out: if you don't code will not run**
+  * To get the token and the api key go to [Discord's developer portal](https://developers.discord.com) and [Gemini API](https://makersuite.google.com/app/apikey)
+  
+* Open up your editor's or IDE's terminal inside the project folder, type in
+``` PowerShell
+python Main.py
+```
+### Linux, MacOS and ChromeOS
+* **Please figure this out yourself, very similar to Window's instruction but there are some differences due to distro, versions, etc.** 
+* Note: Might add some if there are people using them and would like to write one...
+
+## Post-installation
+* Run ```/ping``` and make sure it works
+  * Might take a while to load in
+* Run other commands to make all the rest of them works
+
+## Configuration
+### Creation of new slash commands
+* Go to the folder cogs and create a new file  with your new command(s) and link it back to Main.py
+
+## Troubleshooting
+* Create a new issue, **please add what error you got when you ran it**.
+
+## Discussion
+* Go to the Disscussions tab on GitHub to talk with me about it
+* If you have LHS Coding Club Discord Server, do that first and message me there
+
+## Donate
+* I am a one-man team, please donate, on my wishlist right now is a Framework 16
+
+## Code Contribution
+* Fork the GitHub repository, add what you want to add and I might add it if it is very good.
 ## TODO
-* Add stuff to README.MD such as instructions to run & install...
-* Add a way for the Discord bot to greet people who join the Discord Server
+* ~~Add stuff to README.MD such as instructions to run & install...~~ About finished...
+* ~~Add a way for the Discord bot to greet people who join the Discord Server~~ Finished need to add to GitHub coming soon in 3.0!
 * Add a way for the Discord bot to say goodbye to people who leave the Discord Server.
-* Allow a way for it to create events...
+* ~~Allow a way for it to create events...~~ Sync with Google Calendar via API
