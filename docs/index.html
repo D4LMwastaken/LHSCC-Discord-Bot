@@ -1,17 +1,187 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Page Title</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LHSCC Discord Bot | D4LM</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/all.min.css">
+    <link href="css/Ubuntu.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="icons/profile_picture.webp">
 </head>
-<style>
-    h1{
-        text-align: center;
-    }
-</style>
 <body>
-    <h1>Website is in development please wait...</h1>
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <a href="https://d4lmwastaken.github.io/">
+                    <img src="icons/profile_picture.webp" alt="D4LM Logo" class="nav-logo">
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="https://d4lmwastaken.github.io/">Home</a>
+                <a href="#features">Features</a>
+                <a href="#commands">Commands</a>
+                <a href="#setup">Setup</a>
+                <a href="#about">About</a>
+                <a href="https://github.com/LHSCC" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <header>
+        <div class="hero">
+            <h1>LHSCC Discord Bot</h1>
+            <p>A powerful Discord bot for the Largo High School Coding Club</p>
+            <div class="hero-buttons">
+                <a href="#features" class="btn primary">View Features</a>
+                <a href="https://github.com/LHSCC" class="btn secondary" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="features" class="section-dark">
+            <h2>Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <img src="icons/Google_Calendar_icon_(2015-2020).svg" alt="Google Calendar icon">
+                    <h3>Google Calendar Integration</h3>
+                    <p>Manage events, get reminders, and sync with Google Calendar</p>
+                </div>
+                <div class="feature-card">
+                    <img src="icons/google-gemini-icon.svg" alt="Gemini AI icon">
+                    <h3>Gemini AI Integration</h3>
+                    <p>Smart responses and AI-powered interactions using Google's Gemini</p>
+                </div>
+                <div class="feature-card">
+                    <img src="icons/announcement.svg" alt="Announcement icon" height="300px" width="300px">
+                    <h3>Automatic Announcements</h3>
+                    <p>Weekly event updates, </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="commands" class="section-light">
+            <h2>Commands (featured)</h2>
+            <div class="commands-list">
+                <div class="command-group">
+                    <h3>Calendar Commands(featured)</h3>
+                    <div class="command">
+                        <code>/next_event</code>
+                        <p>Show next event in this week</p>
+                    </div>
+                    <div class="command">
+                        <code>/today_events</code>
+                        <p>Check if there are any new events today</p>
+                    </div>
+                </div>
+
+                <div class="command-group">
+                    <h3>Gemini AI Commands(featured)</h3>
+                    <div class="command">
+                        <code>/gemini ask</code>
+                        <p>Ask Gemini a question </p>
+                    </div>
+                    <div class="command">
+                        <code>/gemini explain</code>
+                        <p>Ask Gemini to explain something</p>
+                    </div>
+                </div>
+
+                <div class="command-group">
+                    <h3>Utility Commands(featured)</h3>
+                    <div class="command">
+                        <code>/ping</code>
+                        <p>Check bot's latency</p>
+                    </div>
+                    <div class="command">
+                        <code>/help</code>
+                        <p>Show all available commands</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="setup" class="section-dark">
+            <h2>Setup Guide</h2>
+            <div class="setup-steps">
+                <div class="step">
+                    <h3>1. Prerequisites</h3>
+                    <ul>
+                        <li>Python 3.8 or higher</li>
+                        <li>Discord Bot Token</li>
+                        <li>Google Calendar API credentials</li>
+                        <li>Gemini API key</li>
+                    </ul>
+                </div>
+                <div class="step">
+                    <h3>2. Installation</h3>
+                    <pre><code>git clone https://github.com/D4LMwastaken/LHSCC-Discord-Bot
+cd LHSCC-Discord-Bot
+pip install -r requirements.txt</code></pre>
+                </div>
+                <div class="step">
+                    <h3>3. Configuration</h3>
+                    <p>Create a .env file with your credentials:</p>
+                    <pre><code>DISCORD_BOT_TOKEN=your_token_here
+GOOGLE_API_KEY=your_gemini_api_key</code></pre>
+                </div>
+                <div class="step">
+                    <h3>4. Running the Bot</h3>
+                    <pre><code>python Main.py</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="section-dark">
+            <h2>Bot Comparison</h2>
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <h3>LHSCC Discord Bot</h3>
+                    <ul>
+                        <li><img src="icons/green_checkmark.svg" alt="Green Checkmark" height="25px">Open Source</li>
+                        <li><img src="icons/green_checkmark.svg" alt="Green Checkmark" height="25px">AI</li>
+                        <li><img src="icons/green_checkmark.svg" alt="Green Checkmark" height="25px">Well-documented</li>
+                        <li><img src="icons/green_checkmark.svg" alt="Green Checkmark" height="25px">Maintained</li>
+                    </ul>
+                </div>
+                <div class="comparison-card">
+                    <h3>Orbit's Discord Bot</h3>
+                    <ul>
+                        <li><img src="icons/X.svg" alt="X icon" height="25px"> Closed-source</li>
+                        <li><img src="icons/X.svg" alt="X icon" height="25px"> Pre-fixed/specific/li>
+                        <li><img src="icons/X.svg" alt="X icon" height="25px"> No documentation</li>
+                        <li><img src="icons/X.svg" alt="X icon" height="25px"> Unmaintained</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="section-light">
+            <h2>About</h2>
+            <div class="about-content">
+                <p>Version 3.0 of the LHSCC Discord Bot, programmed by D4LM. This bot serves as a central hub for the Largo High School Coding Club, providing various features to enhance the club's Discord server experience.</p>
+                <div class="updates">
+                    <h3>Latest Updates</h3>
+                    <ul>
+                        <li>Added Google Calendar integration</li>
+                        <li>Integrated Gemini AI for smart responses</li>
+                        <li>Added weekly event announcements</li>
+                        <li>Improved member welcome and farewell messages</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2024 D4LM. Created by <a href="https://d4lmwastaken.github.io/">D4LM</a></p>
+            <div class="social-links">
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
 </body>
 </html>

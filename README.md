@@ -20,7 +20,7 @@ A Discord Bot integrated into the Largo High School Coding Club's Discord Server
   * [ChromeOS](#linux-macos-and-chromeos)
 * [Post-installation](#post-installation)
 * [Configuration](#configuration)
-  * [Creation of new slash command](#creation-of-new-slash-commands)
+  * [Creation of new slash commands](#creation-of-new-slash-commands)
 * [Troubleshooting](#troubleshooting)
 * [Discussion](#discussion)
 * [Donate](#donate)
@@ -56,17 +56,28 @@ For running the Discord Bot, here are the minimum specification & recommended sp
 
 ## Features
 * Pre-Built Commands
-  * /help
-  * /ping
-  * etc.
-* Basic Math
+  * `/help` - Display all available commands
+  * `/ping` - Check bot's latency
+  * `/hi` - Get a friendly greeting
+  * `/bye` - Say goodbye to the bot
+  * `/version` - Check bot version and info
+  * `/new_stuff` - See what's new in the latest version
+* Basic Math Operations
   * Addition
   * Subtraction
   * Division
   * Multiplication
-* Gemini AI Integration
-  * Ask Gemini either with fast or pro model
-* Ability to add commands
+* Advanced Gemini AI Integration
+* Specific commands for specific use cases
+* Calendar Integration
+  * Syncs with Google Calendar
+  * Event management and scheduling
+* Server Management
+  * Automatic welcome messages for new members
+  * Farewell messages for departing members
+* Extensible Architecture
+  * Easy to add new commands via cogs
+  * Modular design for simple maintenance
 
 ## Installing D4LM's LHSCC Discord Bot
 
@@ -94,13 +105,19 @@ python Main.py
 * Note: Might add some if there are people using them and would like to write one...
 
 ## Post-installation
-* Run ```/ping``` and make sure it works
-  * Might take a while to load in
-* Run other commands to make all the rest of them works
+* Run `/ping` to verify the bot is responding
+  * Initial command load may take a few moments
+* Test the Gemini AI integration with `/ask` or `/askpro`
+* Verify calendar integration if configured
+* Check welcome messages by having a test user join
 
 ## Configuration
 ### Creation of new slash commands
-* Go to the folder cogs and create a new file  with your new command(s) and link it back to Main.py
+* Navigate to the `cogs` folder
+* Create a new Python file for your command(s)
+* Follow the existing cog structure (see `Gemini.py` or `Math.py` for examples)
+* Import and register your new cog in `Main.py`
+* Use proper command decorators and error handling
 
 ## Troubleshooting
 * Create a new issue, **please add what error you got when you ran it**.

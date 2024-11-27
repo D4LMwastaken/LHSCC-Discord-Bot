@@ -1,211 +1,177 @@
-# Main.py
 """
-    Version 2.9 of the Python Discord Bot programmed by D4LM.
-    The purpose of this bot is to be a simple Discord Bot that can communicate with users.
+Main bot file that handles initialization, commands, and event listeners.
+This file serves as the entry point for the Discord bot and manages core functionality.
 """
-# Import all the necessary modules.
-# Discord.py is a Python library used to interact with the Discord API.
-# It is used to create the Discord Bot.
-import discord  # Website: https://guide.pycord.dev/installation
 
-# The OS module is a built-in Python module that provides a way to use the operating
-# system dependent functionality.
-# It is used to get the .env file.
-import os  # Built in Python module. Used to get the .env file.
+import discord
+from discord.ext import commands
+from discord import app_commands
+import os
+from dotenv import load_dotenv
+import asyncio
+import random
+from cogs.Gemini import gemini_generate
 
-# The random module is a built-in Python module that implements pseudo-random number
-# generators for various distributions.
-# It is used to add randomness to the Discord Bot.
-import random  # Built in Python module. Allows me to use randomness in my Discord Bot.
-
-# The load_dotenv() function is a Python function from the python-dotenv package.
-# It is used to load the .env file.
-from dotenv import load_dotenv  # Python package. Used to load the .env file.
-
-# Get the environment variables from the .env file.
+# Load environment variables from .env file
 load_dotenv()
+TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
-# Get the Discord Bot Token from the .env file.
-Discord_Bot_Token = os.getenv('DISCORD_BOT_TOKEN')
-
-# Create the Discord Bot.
-Discord_Bot = discord.Bot()
-
-# About the project variables
-Version = "2.9"  # Note: Change a version every time you make modifications to code. Merged developer and
-# release editions into one.
-DateUpdated = "9/22/2024"  # Change the release date into the last time you updated.
-Language = "Python"  # Change the language only if the code is in a different version or variant.
-Dev = "D4LM"  # Change if you are the one who creates a fork of this project.
-CoDev = "None is the apprentice yet..."  # This is a place to put maintainers of your project.
-UpdatedItems = ("The last version before 3.0!" + "\n" + "Changed package from Discord.py to pycord "
-                                                        "Split the bot into two, a master & an apprentice!")
-
-# Lists the Discord Bot uses
-# Greetings is a list of strings that are used to greet users.
-# goodbyes is a list of strings that are used to say goodbye to users.
-# commands is a list of strings that are used to store all the commands the bot has.
-greetings = ["Hello!", "What's up!", "Howdy!", "Greetings!"]
-goodbyes = ["Bye!", "Goodbye!", "See you later!", "See you soon!"]
-commands = ["/Music", "/Pet", "/Book", "/Video Games", "/PING", "/Job", "/About Me", "/Bye", "/Help", "/Version",
-            "/New Stuff", "/Self Destruct", "/Gemini"]  # Put new commands here.
-
-
-# Required functions
-def random_list_item(chosen_list):
-    """
-    The necessary function required.
-    Used to make sure the chosen elements in the list are random.
-    If used inside @Client.event, it will stop certain replies from being random.
-    """
-    chosen_number = random.randrange(0, len(chosen_list))
-    chosen_item = chosen_list[chosen_number]
-    return chosen_item
-
-
-@Discord_Bot.event
-async def on_ready():
-    """
-    Called when the bot is ready. Prints a message to the console to indicate that the bot is online and ready.
-    """
-    print(f"{Discord_Bot.user} is ready & online!")
-
-
-@Discord_Bot.event
-async def on_connect():  # Syncs the new commands to the Discord Server
-    if Discord_Bot.auto_sync_commands:
-        await Discord_Bot.sync_commands()
-        print("All commands synced!")
-
-
-cogs_list = [  # List of cogs to load
-    'Keywords_And_Responses',
-    'Math',
-    'Gemini'
+# List of guild IDs where the bot will be active
+GUILD_IDS = [
+    1228003403171627078,
+    1239233526835056781
 ]
 
-for cog in cogs_list:  # Load the cogs into the Discord Bot
-    Discord_Bot.load_extension(f'cogs.{cog}')
-
-
-@Discord_Bot.slash_command(name="ping", description="Ping the bot to send Pong!")
-async def ping(ctx: discord.ApplicationContext):
+class Bot(commands.Bot):
     """
-    This is the ping command. It checks the latency of the Discord Bot and sends it to the user as "Pong! <latency>".
+    Main bot class that inherits from commands.Bot.
+    Handles initialization of cogs and core bot functionality.
     """
-    await ctx.respond(f"Pong! Latency is {Discord_Bot.latency}")
+    def __init__(self):
+        # Initialize bot with command prefix and all intents enabled
+        super().__init__(command_prefix="!", intents=discord.Intents.all())
+        # List of cogs to be loaded on startup
+        self.initial_extensions = [
+            'cogs.KeywordsAndResponses',
+            'cogs.Math',
+            'cogs.Gemini',
+            'cogs.Calendar',
+            'cogs.Physics'
+        ]
 
+    async def setup_hook(self):
+        """
+        Loads all cogs during bot startup.
+        Prints success/error messages for each cog loading attempt.
+        """
+        for ext in self.initial_extensions:
+            try:
+                if ext not in [extension for extension in self.extensions]:
+                    await self.load_extension(ext)
+                    print(f"Loaded {ext} cog successfully!")
+            except Exception as e:
+                print(f"Error loading {ext} cog: {str(e)}")
 
-@Discord_Bot.slash_command(name="hi", description="Sends a greeting to the user.")
-async def hi(ctx: discord.ApplicationContext):
-    """
-    Sends a greeting to the user.
+    async def on_ready(self):
+        """
+        Event handler for when the bot is ready.
+        Prints bot information and syncs commands to guilds.
+        """
+        print(f"Logged in as {self.user.name}")
+        print(f"Bot latency: {round(self.latency * 1000)}ms")
+        print(f"Bot is in {len(self.guilds)} guilds.")
+        
+        # Sync commands to each guild
+        print("\nSyncing commands to specific guilds...")
+        for guild_id in GUILD_IDS:
+            guild = discord.Object(id=guild_id)
+            try:
+                await self.tree.sync(guild=guild)
+                print(f"Successfully synced commands to guild {guild_id}")
+            except Exception as e:
+                print(f"Error syncing to guild {guild_id}: {str(e)}")
 
-    This function sends a random greeting from the list called greetings.
-    """
-    await ctx.respond(random_list_item(greetings))
+        print("Command synchronization complete!")
 
+    async def on_member_join(self, member: discord.Member):
+        """
+        Event handler for when a member joins the server.
+        Sends a welcome message to the welcome channel.
+        """
+        print("Someone joined the Discord Server")
+        parameter = (f"In under 2000 characters, generate a welcome message for the Largo High School Coding Club. Tell "
+                  f"the user {member} a greeting with a {member.mention}. Add this to the message: We accept newbies. "
+                  f"Tell them to check out #rules and #roles. Tell them to introduce themselves in #introductions")
+        response = gemini_generate(parameter)
+        welcome_channel = discord.utils.get(member.guild.text_channels, name="welcome")
+        if welcome_channel:
+            await welcome_channel.send(response)
 
-@Discord_Bot.slash_command(name="help", description="Sends out all the possible commands for the bot.")
-async def help(ctx: discord.ApplicationContext):
-    """
-    Sends out all the possible commands for the bot.
-    """
-    await ctx.respond(" ".join(commands))
+bot = Bot()
 
+@bot.tree.command(name="ping", description="Check the bot's latency")
+@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+async def ping(interaction: discord.Interaction):
+    """Command to check bot's latency/response time"""
+    await interaction.response.send_message(f"Pong! Latency: {round(bot.latency * 1000)}ms")
 
-@Discord_Bot.slash_command(name="bye", description="Says a goodbye to the bot.")
-async def bye(ctx: discord.ApplicationContext):
-    """
-    Says a goodbye to the bot.
+@bot.tree.command(name="hi", description="Say hello to the bot!")
+@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+async def hi(interaction: discord.Interaction):
+    """Friendly greeting command with randomized responses"""
+    greetings = ["Hello!", "What's up!", "Howdy!", "Greetings!"]
+    response = random.choice(greetings)
+    await interaction.response.send_message(response)
 
-    This function sends a random goodbye from the list called goodbyes.
-    """
-    await ctx.respond(random_list_item(goodbyes))
-    print(random_list_item(goodbyes))
-    print("This is not an error! Bot closed by command!")
-    exit()
+@bot.tree.command(name="help", description="Get information about available commands")
+@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+async def help(interaction: discord.Interaction):
+    """Displays help information about available commands"""
+    commands = ["/Music", "/Pet", "/Book", "/Video Games", "/PING", "/Job", "/About Me", "/Bye", "/Help", "/Version",
+                "/New Stuff", "/Self Destruct", "/Gemini", "/gemini ask", "/gemini explain", "/gemini summarize", "/gemini brainstorm"]
+    await interaction.response.send_message(" ".join(commands))
 
+@bot.tree.command(name="bye", description="Say goodbye to the bot!")
+@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+async def bye(interaction: discord.Interaction):
+    """Farewell command with shutdown functionality"""
+    await interaction.response.send_message("Goodbye! Shutting down...")
+    await bot.close()
 
-"""
-    Note: Remember to make this code only work for user with certain permission in Discord server settings.
-    Another Note: There is no exit code since the bot is leaving as the user intended.
-"""
-
-
-@Discord_Bot.slash_command(name="version", description="Gives version information to the usear about the Discord Bot.")
-async def version(ctx: discord.ApplicationContext):
-    """
-    Gives version information to the user about the Discord Bot.
-
-    This function sends a message to the user telling the user the version of the bot, the date it was last updated,
-    the programming language it was written in, the developer of the bot, and the assistant developer/maintainer.
-
-    :param ctx: The context of the command.
-    :type ctx: discord.ApplicationContext
-    """
-    await ctx.respond("Version: " + Version + "\n" + "Date Updated: " + DateUpdated + "\n" + "Language: " + Language +
+@bot.tree.command(name="version", description="Get the current version of the bot")
+@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+async def version(interaction: discord.Interaction):
+    """Displays current bot version information"""
+    Version = "3.0"
+    DateUpdated = "11/27/2024"
+    Language = "Python"
+    Discord_API_Wrapper = "Pycord"
+    Dev = "D4LM"
+    CoDev = "None is the apprentice yet..."
+    await interaction.response.send_message("Version: " + Version + "\n" + "Date Updated: " + DateUpdated + "\n" + "Language: " + Language +
                       "\n" + "Developer: " + Dev + "\n" + "Assistant Developer/maintainer: " + CoDev)
 
+@bot.tree.command(name="new_stuff", description="See what's new in the latest update")
+@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+async def new_stuff(interaction: discord.Interaction):
+    """Shows changelog and updates for the latest version"""
+    Version = "3.0"
+    UpdatedItems = ("Version 3.0 is here!" + "\n" + 
+               "* Added Google Calendar integration\n" +
+               "* New calendar commands: /events and /add_event\n" +
+               "* View and manage your Google Calendar directly from Discord\n" +
+               "* Added Gemini AI integration with /gemini ask, /gemini explain, /gemini summarize, and /gemini brainstorm commands\n"
+               "* Added Physics and more math commands\n")
+    await interaction.response.send_message("For version " + Version + ".\nHere is the Changelog: " + UpdatedItems)
 
-@Discord_Bot.slash_command(name="new_stuff", description="Shows what is new to the bot.")
-async def new_stuff(ctx: discord.ApplicationContext):
+@bot.tree.command(name="self_destruct", description="Shut down the bot dramatically")
+@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+async def self_destruct(interaction: discord.Interaction):
+    """Dramatic shutdown command with countdown"""
+    await interaction.response.send_message("💥 SELF DESTRUCT SEQUENCE INITIATED 💥")
+    for i in range(5, 0, -1):
+        await interaction.channel.send(str(i))
+        await asyncio.sleep(1)
+    await interaction.channel.send("BOOM! The bot has exploded! 💥")
+    await bot.close()
+
+async def on_member_remove(member: discord.Member):
     """
-    Shows what is new to the bot.
-
-    This function sends a message to the user telling the user what is new with the bot in the current version.
-
-    :param ctx: The context of the command.
-    :type ctx: discord.ApplicationContext
+    Event handler for when a member leaves the server.
+    Sends a farewell message to the system channel.
     """
-    # Get the changelog for the version.
-    changelog = UpdatedItems
+    server = member.guild
+    question = f"Write a farewell message for {member} leaving."
+    response = gemini_generate(question)
+    
+    if server.system_channel is not None:
+       await server.system_channel.send(response)
 
-    # Send the changelog to the user.
-    await ctx.respond("For version " + Version + ".\nHere is the Changelog: " + changelog)
+bot.add_listener(on_member_remove, 'on_member_remove')
 
+def run_bot():
+    """Main function to start the bot"""
+    bot.run(TOKEN)
 
-@Discord_Bot.slash_command(name="self_destruct", description="Self-destructs the bot.")
-async def self_destruct(ctx: discord.ApplicationContext):
-    """
-    Self-destructs the bot.
-
-    This function sends a countdown message to the user and then sends a message telling the user the bot has exploded.
-    Then it will exit the program.
-
-    :param ctx: The context of the command.
-    :type ctx: discord.ApplicationContext
-    """
-    # Send a message to the user to prepare for the countdown.
-    await ctx.respond("Preparing to blow up...")
-
-    # Start the countdown.
-    await ctx.respond('3')
-    await ctx.respond('2')
-    await ctx.respond('1')
-
-    # Send a message to the user that the bot is going to explode.
-    await ctx.respond("BOOM!")
-
-    # Log to the console that the bot has exploded.
-    print("Discord Bot exploded!")
-
-    # Exit the program.
-    exit()
-
-
-# The last line of the code is to run the bot with the token
-# found in the .env file.
-# The token is used to authenticate the bot with the Discord servers.
-# The bot will not be able to connect to the Discord servers if the token is invalid.
-# The bot will also not be able to connect to the Discord servers if the bot is not enabled.
-# The bot will also not be able to connect to the Discord servers if the bot is not verified.
-"""
-    This is the last line of code.
-    It runs the bot with the token found in the .env file.
-    The token is used to authenticate the bot with the Discord servers.
-    The bot will not be able to connect to the Discord servers if the token is invalid.
-    The bot will also not be able to connect to the Discord servers if the bot is not enabled.
-    The bot will also not be able to connect to the Discord servers if the bot is not verified.
-"""
-Discord_Bot.run(Discord_Bot_Token)
+if __name__ == "__main__":
+    run_bot()
