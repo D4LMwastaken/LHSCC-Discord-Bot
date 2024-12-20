@@ -370,3 +370,11 @@ footer {
         text-align: center;
     }
 }
+
+/*Steps class
+==========================================================================*/
+
+/*Fix issue with li in steps class*/
+.setup-steps ul {
+    margin-left: 2rem;
+}
