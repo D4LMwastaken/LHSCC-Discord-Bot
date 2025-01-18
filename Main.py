@@ -11,6 +11,17 @@ from dotenv import load_dotenv
 import asyncio
 import random
 from cogs.Gemini import gemini_generate
+import logging
+
+""" Comment notes:
+* noqa means inspection is disabled on that line
+"""
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s' # noqa
+)
 
 # Load environment variables from .env file
 load_dotenv()
