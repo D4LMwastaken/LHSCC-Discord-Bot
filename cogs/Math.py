@@ -9,33 +9,40 @@ Dependencies:
 - math/cmath: For mathematical operations including complex numbers
 """
 
-import cmath
-import math
-import textwrap
 import discord
-from discord import app_commands
 from discord.ext import commands
+import math
 import numpy as np
+import sympy as sp
 from scipy import stats
+import textwrap
+import os
+from dotenv import load_dotenv
 
-async def send_long_message(interaction: discord.Interaction, content: str):
+# Load environment variables
+load_dotenv()
+
+# Get guild IDs from environment variable
+GUILD_IDS = [int(guild_id.strip()) for guild_id in os.getenv('GUILD_IDS', '').split(',') if guild_id.strip()]
+
+async def send_long_message(ctx, content: str):
     """
     Utility function to send messages that might exceed Discord's 2000 character limit.
     Splits long messages into chunks and sends them sequentially.
     
     Args:
-        interaction: Discord interaction object
+        ctx: Discord application context object
         content: The message content to send
     """
     if len(content) <= 2000:
-        await interaction.response.send_message(content)
+        await ctx.respond(content)
         return
 
     chunks = textwrap.wrap(content, width=1990, replace_whitespace=False)
-    await interaction.response.send_message(chunks[0])
+    await ctx.respond(chunks[0])
 
     for chunk in chunks[1:]:
-        await interaction.followup.send(chunk)
+        await ctx.send_followup(chunk)
 
 class Math(commands.Cog):
     """
@@ -44,157 +51,190 @@ class Math(commands.Cog):
     """
     
     def __init__(self, bot):
+        """
+        Initialize the Math Cog.
+        
+        Args:
+            bot (commands.Bot): The bot instance
+        """
         self.bot = bot
+        
+        # Create the command group within the class
+        self.math_group = bot.create_group(name="math", description="Advanced mathematical operations")
 
-    math_group = app_commands.Group(name="math", description="Advanced mathematical operations")
+        # Dynamically add commands to the group
+        self.math_group.command(name="add", description="Add two numbers", guild_ids=GUILD_IDS)(self.add)
+        self.math_group.command(name="subtract", description="Subtract two numbers", guild_ids=GUILD_IDS)(self.subtract)
+        self.math_group.command(name="multiply", description="Multiply two numbers", guild_ids=GUILD_IDS)(self.multiply)
+        self.math_group.command(name="divide", description="Divide two numbers", guild_ids=GUILD_IDS)(self.divide)
+        self.math_group.command(name="power", description="Calculate a number raised to a power", guild_ids=GUILD_IDS)(self.power)
+        self.math_group.command(name="sqrt", description="Calculate the square root of a number", guild_ids=GUILD_IDS)(self.sqrt)
+        self.math_group.command(name="sin", description="Calculate sine (in degrees)", guild_ids=GUILD_IDS)(self.sin)
+        self.math_group.command(name="cos", description="Calculate cosine (in degrees)", guild_ids=GUILD_IDS)(self.cos)
+        self.math_group.command(name="tan", description="Calculate tangent (in degrees)", guild_ids=GUILD_IDS)(self.tan)
+        self.math_group.command(name="log", description="Calculate logarithm with custom base", guild_ids=GUILD_IDS)(self.log)
+        self.math_group.command(name="ln", description="Calculate natural logarithm", guild_ids=GUILD_IDS)(self.ln)
+        self.math_group.command(name="area_circle", description="Calculate area of a circle", guild_ids=GUILD_IDS)(self.area_circle)
+        self.math_group.command(name="area_triangle", description="Calculate area of a triangle using base and height", guild_ids=GUILD_IDS)(self.area_triangle)
+        self.math_group.command(name="mean", description="Calculate arithmetic mean of numbers (separate with spaces)", guild_ids=GUILD_IDS)(self.mean)
+        self.math_group.command(name="quadratic", description="Solve quadratic equation ax² + bx + c = 0", guild_ids=GUILD_IDS)(self.quadratic)
+        self.math_group.command(name="median", description="Calculate median of numbers (separate with spaces)", guild_ids=GUILD_IDS)(self.median)
+        self.math_group.command(name="mode", description="Calculate mode of numbers (separate with spaces)", guild_ids=GUILD_IDS)(self.mode)
+        self.math_group.command(name="std_dev", description="Calculate standard deviation (separate numbers with spaces)", guild_ids=GUILD_IDS)(self.std_dev)
+        self.math_group.command(name="variance", description="Calculate variance (separate numbers with spaces)", guild_ids=GUILD_IDS)(self.variance)
+        self.math_group.command(name="z_score", description="Calculate z-score for a value in a dataset", guild_ids=GUILD_IDS)(self.z_score)
+        self.math_group.command(name="correlation", description="Calculate Pearson correlation coefficient (x y pairs)", guild_ids=GUILD_IDS)(self.correlation)
+        self.math_group.command(name="regression", description="Calculate linear regression (x y pairs)", guild_ids=GUILD_IDS)(self.regression)
+        self.math_group.command(name="trig_solve", description="Solve triangle given side-angle pair", guild_ids=GUILD_IDS)(self.trig_solve)
+        self.math_group.command(name="confidence_interval", description="Calculate confidence interval for mean", guild_ids=GUILD_IDS)(self.confidence_interval)
 
-    @math_group.command(name="add", description="Add two numbers")
-    async def add(self, interaction: discord.Interaction, num1: float, num2: float):
+    async def add(self, ctx, num1: float, num2: float):
         """
         Add two numbers together.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             num1: The first number
             num2: The second number
         """
         try:
             result = num1 + num2
-            await interaction.response.send_message(f"{num1} + {num2} = {result}")
+            await ctx.respond(f"{num1} + {num2} = {result}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="subtract", description="Subtract two numbers")
-    async def subtract(self, interaction: discord.Interaction, num1: float, num2: float):
+    async def subtract(self, ctx, num1: float, num2: float):
         """
         Subtract the second number from the first.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             num1: The first number
             num2: The second number
         """
         try:
             result = num1 - num2
-            await interaction.response.send_message(f"{num1} - {num2} = {result}")
+            await ctx.respond(f"{num1} - {num2} = {result}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="multiply", description="Multiply two numbers")
-    async def multiply(self, interaction: discord.Interaction, num1: float, num2: float):
+    async def multiply(self, ctx, num1: float, num2: float):
         """
         Multiply two numbers together.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             num1: The first number
             num2: The second number
         """
         try:
             result = num1 * num2
-            await interaction.response.send_message(f"{num1} × {num2} = {result}")
+            await ctx.respond(f"{num1} × {num2} = {result}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="divide", description="Divide two numbers")
-    async def divide(self, interaction: discord.Interaction, num1: float, num2: float):
+    async def divide(self, ctx, num1: float, num2: float):
         """
         Divide the first number by the second.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             num1: The dividend
             num2: The divisor
         """
         try:
             if num2 == 0:
-                await interaction.response.send_message("Cannot divide by zero!")
+                await ctx.respond("Cannot divide by zero!")
                 return
             result = num1 / num2
-            await interaction.response.send_message(f"{num1} ÷ {num2} = {result}")
+            await ctx.respond(f"{num1} ÷ {num2} = {result}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="power", description="Calculate a number raised to a power")
-    async def power(self, interaction: discord.Interaction, base: float, exponent: float):
+    async def power(self, ctx, base: float, exponent: float):
         """
         Calculate the result of raising a number to a power.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             base: The base number
             exponent: The exponent
         """
         try:
             result = math.pow(base, exponent)
-            await interaction.response.send_message(f"{base}^{exponent} = {result}")
+            await ctx.respond(f"{base}^{exponent} = {result}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="sqrt", description="Calculate the square root of a number")
-    async def sqrt(self, interaction: discord.Interaction, number: float):
+    async def sqrt(self, ctx, number: float):
         """
         Calculate the square root of a number.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             number: The number to find the square root of
         """
         try:
             if number < 0:
                 result = cmath.sqrt(number)
-                await interaction.response.send_message(f"√{number} = {result} (complex number)")
+                await ctx.respond(f"√{number} = {result} (complex number)")
             else:
                 result = math.sqrt(number)
-                await interaction.response.send_message(f"√{number} = {result}")
+                await ctx.respond(f"√{number} = {result}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="sin", description="Calculate sine (in degrees)")
-    async def sin(self, interaction: discord.Interaction, angle: float):
+    async def sin(self, ctx, angle: float):
         """
         Calculate the sine of an angle in degrees.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             angle: The angle in degrees
         """
         try:
             result = math.sin(math.radians(angle))
-            await interaction.response.send_message(f"sin({angle}°) = {result:.4f}")
+            await ctx.respond(f"sin({angle}°) = {result:.4f}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="cos", description="Calculate cosine (in degrees)")
-    async def cos(self, interaction: discord.Interaction, angle: float):
+    async def cos(self, ctx, angle: float):
         """
         Calculate the cosine of an angle in degrees.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             angle: The angle in degrees
         """
         try:
             result = math.cos(math.radians(angle))
-            await interaction.response.send_message(f"cos({angle}°) = {result:.4f}")
+            await ctx.respond(f"cos({angle}°) = {result:.4f}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="tan", description="Calculate tangent (in degrees)")
-    async def tan(self, interaction: discord.Interaction, angle: float):
+    async def tan(self, ctx, angle: float):
         """
         Calculate the tangent of an angle in degrees.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             angle: The angle in degrees
         """
         try:
             if abs(math.cos(math.radians(angle))) < 1e-10:
-                await interaction.response.send_message("Error: tangent is undefined at this angle")
+                await ctx.respond("Error: tangent is undefined at this angle")
                 return
             result = math.tan(math.radians(angle))
-            await interaction.response.send_message(f"tan({angle}°) = {result:.4f}")
+            await ctx.respond(f"tan({angle}°) = {result:.4f}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="log", description="Calculate logarithm with custom base")
-    async def log(self, interaction: discord.Interaction, number: float, base: float | None = None):
+    async def log(self, ctx, number: float, base: float | None = None):
         """
         Calculate the logarithm of a number with a custom base.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             number: The number to find the logarithm of
             base: The base of the logarithm (default is 10)
         """
@@ -202,98 +242,98 @@ class Math(commands.Cog):
             if base is None:
                 base = 10.0
             if number <= 0 or base <= 0 or base == 1:
-                await interaction.response.send_message("Error: Invalid input for logarithm")
+                await ctx.respond("Error: Invalid input for logarithm")
                 return
             result = math.log(number, base)
-            await interaction.response.send_message(f"log_{base}({number}) = {result:.4f}")
+            await ctx.respond(f"log_{base}({number}) = {result:.4f}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="ln", description="Calculate natural logarithm")
-    async def ln(self, interaction: discord.Interaction, number: float):
+    async def ln(self, ctx, number: float):
         """
         Calculate the natural logarithm of a number.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             number: The number to find the natural logarithm of
         """
         try:
             if number <= 0:
-                await interaction.response.send_message("Error: Cannot calculate natural logarithm of non-positive number")
+                await ctx.respond("Error: Cannot calculate natural logarithm of non-positive number")
                 return
             result = math.log(number)
-            await interaction.response.send_message(f"ln({number}) = {result:.4f}")
+            await ctx.respond(f"ln({number}) = {result:.4f}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="area_circle", description="Calculate area of a circle")
-    async def area_circle(self, interaction: discord.Interaction, radius: float):
+    async def area_circle(self, ctx, radius: float):
         """
         Calculate the area of a circle.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             radius: The radius of the circle
         """
         try:
             if radius < 0:
-                await interaction.response.send_message("Error: Radius cannot be negative")
+                await ctx.respond("Error: Radius cannot be negative")
                 return
             area = math.pi * radius * radius
-            await interaction.response.send_message(f"Area of circle with radius {radius} = {area:.4f}")
+            await ctx.respond(f"Area of circle with radius {radius} = {area:.4f}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="area_triangle", description="Calculate area of a triangle using base and height")
-    async def area_triangle(self, interaction: discord.Interaction, base: float, height: float):
+    async def area_triangle(self, ctx, base: float, height: float):
         """
         Calculate the area of a triangle using the base and height.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             base: The base of the triangle
             height: The height of the triangle
         """
         try:
             if base < 0 or height < 0:
-                await interaction.response.send_message("Error: Dimensions cannot be negative")
+                await ctx.respond("Error: Dimensions cannot be negative")
                 return
             area = 0.5 * base * height
-            await interaction.response.send_message(f"Area of triangle with base {base} and height {height} = {area:.4f}")
+            await ctx.respond(f"Area of triangle with base {base} and height {height} = {area:.4f}")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="mean", description="Calculate arithmetic mean of numbers (separate with spaces)")
-    async def mean(self, interaction: discord.Interaction, *, numbers: str):
+    async def mean(self, ctx, *, numbers: str):
         """
         Calculate the arithmetic mean of a set of numbers.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             numbers: Space-separated list of numbers
         """
         try:
             nums = [float(x) for x in numbers.split()]
             if not nums:
-                await interaction.response.send_message("Error: Please provide numbers to calculate mean")
+                await ctx.respond("Error: Please provide numbers to calculate mean")
                 return
             result = sum(nums) / len(nums)
             message = f"Numbers provided: {nums}\nMean = {result:.4f}\n"
             message += f"\nDetailed calculation:\nSum = {sum(nums)}\nCount = {len(nums)}\nMean = Sum/Count = {result:.4f}"
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="quadratic", description="Solve quadratic equation ax² + bx + c = 0")
-    async def quadratic(self, interaction: discord.Interaction, a: float, b: float, c: float):
+    async def quadratic(self, ctx, a: float, b: float, c: float):
         """
         Solve a quadratic equation of the form ax² + bx + c = 0.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             a: The coefficient of the squared term
             b: The coefficient of the linear term
             c: The constant term
         """
         try:
             if a == 0:
-                await interaction.response.send_message("Error: Not a quadratic equation (a = 0)")
+                await ctx.respond("Error: Not a quadratic equation (a = 0)")
                 return
             
             discriminant = b**2 - 4*a*c
@@ -301,23 +341,22 @@ class Math(commands.Cog):
             if discriminant > 0:
                 x1 = (-b + math.sqrt(discriminant)) / (2*a)
                 x2 = (-b - math.sqrt(discriminant)) / (2*a)
-                await interaction.response.send_message(f"Two real solutions:\nx₁ = {x1:.4f}\nx₂ = {x2:.4f}")
+                await ctx.respond(f"Two real solutions:\nx₁ = {x1:.4f}\nx₂ = {x2:.4f}")
             elif discriminant == 0:
                 x = -b / (2*a)
-                await interaction.response.send_message(f"One real solution:\nx = {x:.4f}")
+                await ctx.respond(f"One real solution:\nx = {x:.4f}")
             else:
                 real = -b / (2*a)
                 imag = math.sqrt(-discriminant) / (2*a)
-                await interaction.response.send_message(
+                await ctx.respond(
                     f"Two complex solutions:\n"
                     f"x₁ = {real:.4f} + {imag:.4f}i\n"
                     f"x₂ = {real:.4f} - {imag:.4f}i"
                 )
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="median", description="Calculate median of numbers (separate with spaces)")
-    async def median(self, interaction: discord.Interaction, *, numbers: str):
+    async def median(self, ctx, *, numbers: str):
         """
         Calculate the median (middle value) of a dataset.
         Example usage: /math median 1 2 3 4 5
@@ -325,16 +364,15 @@ class Math(commands.Cog):
         try:
             nums = [float(x) for x in numbers.split()]
             if not nums:
-                await interaction.response.send_message("Error: Please provide numbers to calculate median")
+                await ctx.respond("Error: Please provide numbers to calculate median")
                 return
             result = np.median(nums)
             message = f"Numbers provided: {nums}\nMedian = {result:.4f}"
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="mode", description="Calculate mode of numbers (separate with spaces)")
-    async def mode(self, interaction: discord.Interaction, *, numbers: str):
+    async def mode(self, ctx, *, numbers: str):
         """
         Find the mode (most frequent value) in a dataset.
         Example usage: /math mode 1 2 2 3 3 3 4
@@ -342,16 +380,15 @@ class Math(commands.Cog):
         try:
             nums = [float(x) for x in numbers.split()]
             if not nums:
-                await interaction.response.send_message("Error: Please provide numbers to calculate mode")
+                await ctx.respond("Error: Please provide numbers to calculate mode")
                 return
             mode_result = stats.mode(nums)
             message = f"Numbers provided: {nums}\nMode = {mode_result.mode[0]:.4f} (occurs {mode_result.count[0]} times)"
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="std_dev", description="Calculate standard deviation (separate numbers with spaces)")
-    async def std_dev(self, interaction: discord.Interaction, *, numbers: str):
+    async def std_dev(self, ctx, *, numbers: str):
         """
         Calculate the sample standard deviation of a dataset.
         Uses n-1 degrees of freedom (Bessel's correction).
@@ -360,16 +397,15 @@ class Math(commands.Cog):
         try:
             nums = [float(x) for x in numbers.split()]
             if not nums:
-                await interaction.response.send_message("Error: Please provide numbers to calculate standard deviation")
+                await ctx.respond("Error: Please provide numbers to calculate standard deviation")
                 return
             result = np.std(nums, ddof=1)  # ddof=1 for sample standard deviation
             message = f"Numbers provided: {nums}\nStandard Deviation = {result:.4f}"
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="variance", description="Calculate variance (separate numbers with spaces)")
-    async def variance(self, interaction: discord.Interaction, *, numbers: str):
+    async def variance(self, ctx, *, numbers: str):
         """
         Calculate the sample variance of a dataset.
         Uses n-1 degrees of freedom (Bessel's correction).
@@ -378,16 +414,15 @@ class Math(commands.Cog):
         try:
             nums = [float(x) for x in numbers.split()]
             if not nums:
-                await interaction.response.send_message("Error: Please provide numbers to calculate variance")
+                await ctx.respond("Error: Please provide numbers to calculate variance")
                 return
             result = np.var(nums, ddof=1)  # ddof=1 for sample variance
             message = f"Numbers provided: {nums}\nVariance = {result:.4f}"
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="z_score", description="Calculate z-score for a value in a dataset")
-    async def z_score(self, interaction: discord.Interaction, value: float, *, numbers: str):
+    async def z_score(self, ctx, value: float, *, numbers: str):
         """
         Calculate the z-score (standard score) for a value within a dataset.
         Z-score represents how many standard deviations away from the mean a value is.
@@ -396,19 +431,18 @@ class Math(commands.Cog):
         try:
             nums = [float(x) for x in numbers.split()]
             if not nums:
-                await interaction.response.send_message("Error: Please provide a dataset")
+                await ctx.respond("Error: Please provide a dataset")
                 return
             mean = np.mean(nums)
             std = np.std(nums, ddof=1)
             z = (value - mean) / std
             message = f"Value: {value}\nDataset: {nums}\nZ-score = {z:.4f}\n"
             message += f"\nCalculation details:\nMean = {mean:.4f}\nStandard Deviation = {std:.4f}"
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="correlation", description="Calculate Pearson correlation coefficient (x y pairs)")
-    async def correlation(self, interaction: discord.Interaction, *, data: str):
+    async def correlation(self, ctx, *, data: str):
         """
         Calculate the Pearson correlation coefficient between two variables.
         Input should be pairs of x and y values.
@@ -418,18 +452,17 @@ class Math(commands.Cog):
         try:
             nums = [float(x) for x in data.split()]
             if len(nums) % 2 != 0:
-                await interaction.response.send_message("Error: Please provide pairs of numbers (x y x y ...)")
+                await ctx.respond("Error: Please provide pairs of numbers (x y x y ...)")
                 return
             x = nums[::2]  # Every other number starting from index 0
             y = nums[1::2]  # Every other number starting from index 1
             r = np.corrcoef(x, y)[0, 1]
             message = f"X values: {x}\nY values: {y}\nCorrelation coefficient (r) = {r:.4f}"
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="regression", description="Calculate linear regression (x y pairs)")
-    async def regression(self, interaction: discord.Interaction, *, data: str):
+    async def regression(self, ctx, *, data: str):
         """
         Perform linear regression analysis on a set of (x,y) points.
         Calculates the line of best fit (y = mx + b) and R² value.
@@ -439,7 +472,7 @@ class Math(commands.Cog):
         try:
             nums = [float(x) for x in data.split()]
             if len(nums) % 2 != 0:
-                await interaction.response.send_message("Error: Please provide pairs of numbers (x y x y ...)")
+                await ctx.respond("Error: Please provide pairs of numbers (x y x y ...)")
                 return
             x = np.array(nums[::2])  # Every other number starting from index 0
             y = np.array(nums[1::2])  # Every other number starting from index 1
@@ -451,17 +484,17 @@ class Math(commands.Cog):
             message += f"Equation: y = {slope:.4f}x + {intercept:.4f}\n"
             message += f"R² (coefficient of determination) = {r_squared:.4f}\n"
             message += f"\nX values: {x.tolist()}\nY values: {y.tolist()}"
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="trig_solve", description="Solve triangle given side-angle pair")
-    async def trig_solve(self, interaction: discord.Interaction, side: float, angle: float, is_opposite: bool):
+    async def trig_solve(self, ctx, side: float, angle: float, is_opposite: bool):
         """
         Solve a right triangle given one side and one angle.
         Uses trigonometric ratios to find missing sides and angles.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             side: Length of the known side
             angle: Known angle in degrees
             is_opposite: True if the known side is opposite to the known angle
@@ -470,7 +503,7 @@ class Math(commands.Cog):
         """
         try:
             if side <= 0 or angle <= 0 or angle >= 180:
-                await interaction.response.send_message("Error: Invalid side length or angle")
+                await ctx.respond("Error: Invalid side length or angle")
                 return
             
             angle_rad = math.radians(angle)
@@ -489,17 +522,17 @@ class Math(commands.Cog):
                 message += f"- Other angle = {(90 - angle):.4f}°\n"
                 message += f"- Hypotenuse = {(side / math.cos(angle_rad)):.4f}"
             
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @math_group.command(name="confidence_interval", description="Calculate confidence interval for mean")
-    async def confidence_interval(self, interaction: discord.Interaction, confidence: float, *, numbers: str):
+    async def confidence_interval(self, ctx, confidence: float, *, numbers: str):
         """
         Calculate a confidence interval for the population mean.
         Uses Student's t-distribution for small sample sizes.
         
         Args:
+            ctx (discord.ApplicationContext): The context of the interaction
             confidence: Confidence level (0-100)
             numbers: Space-separated list of sample values
         
@@ -509,10 +542,10 @@ class Math(commands.Cog):
         try:
             nums = [float(x) for x in numbers.split()]
             if not nums:
-                await interaction.response.send_message("Error: Please provide numbers for the dataset")
+                await ctx.respond("Error: Please provide numbers for the dataset")
                 return
             if confidence <= 0 or confidence >= 100:
-                await interaction.response.send_message("Error: Confidence level must be between 0 and 100")
+                await ctx.respond("Error: Confidence level must be between 0 and 100")
                 return
             
             data = np.array(nums)
@@ -526,10 +559,163 @@ class Math(commands.Cog):
             message += f"Interval: ({ci[0]:.4f}, {ci[1]:.4f})\n"
             message += f"\nDataset: {nums}"
             
-            await send_long_message(interaction, message)
+            await send_long_message(ctx, message)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-async def setup(bot):
-    """Register the Math cog with the bot."""
-    await bot.add_cog(Math(bot))
+    @discord.slash_command()
+    async def solve_equation(self, ctx, equation: str):
+        """
+        Solve a mathematical equation symbolically.
+        
+        Args:
+            ctx (discord.ApplicationContext): The context of the interaction
+            equation (str): The equation to solve
+        """
+        try:
+            # Use SymPy to solve the equation
+            x = sp.Symbol('x')
+            solution = sp.solve(sp.sympify(equation), x)
+            
+            # Create an embed to display results
+            embed = discord.Embed(
+                title="Equation Solver",
+                description=f"Solving: {equation}",
+                color=discord.Color.purple()
+            )
+            
+            # Add solution(s) to the embed
+            if solution:
+                for i, sol in enumerate(solution, 1):
+                    embed.add_field(
+                        name=f"Solution {i}", 
+                        value=str(sol), 
+                        inline=False
+                    )
+            else:
+                embed.add_field(
+                    name="Result", 
+                    value="No real solutions found", 
+                    inline=False
+                )
+            
+            await ctx.respond(embed=embed)
+        
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
+
+    @discord.slash_command()
+    async def statistical_analysis(self, ctx, data: str):
+        """
+        Perform statistical analysis on a list of numbers.
+        
+        Args:
+            ctx (discord.ApplicationContext): The context of the interaction
+            data (str): Comma-separated list of numbers
+        """
+        try:
+            # Convert input string to list of floats
+            numbers = [float(x.strip()) for x in data.split(',')]
+            
+            # Calculate statistical metrics
+            mean = np.mean(numbers)
+            median = np.median(numbers)
+            std_dev = np.std(numbers)
+            variance = np.var(numbers)
+            
+            # Create an embed to display results
+            embed = discord.Embed(
+                title="Statistical Analysis",
+                description=f"Analysis of: {data}",
+                color=discord.Color.green()
+            )
+            embed.add_field(name="Mean", value=f"{mean:.2f}", inline=False)
+            embed.add_field(name="Median", value=f"{median:.2f}", inline=False)
+            embed.add_field(name="Standard Deviation", value=f"{std_dev:.2f}", inline=False)
+            embed.add_field(name="Variance", value=f"{variance:.2f}", inline=False)
+            
+            await ctx.respond(embed=embed)
+        
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
+
+    @discord.slash_command()
+    async def probability_distribution(self, ctx, distribution: str, *params):
+        """
+        Calculate probability distribution metrics.
+        
+        Args:
+            ctx (discord.ApplicationContext): The context of the interaction
+            distribution (str): Type of distribution (normal, binomial, poisson)
+            params (float): Distribution parameters
+        """
+        try:
+            # Convert params to floats
+            params = [float(p) for p in params]
+            
+            # Create an embed to display results
+            embed = discord.Embed(
+                title="Probability Distribution",
+                description=f"Distribution: {distribution.capitalize()}",
+                color=discord.Color.blue()
+            )
+            
+            # Calculate distribution-specific metrics
+            if distribution.lower() == 'normal':
+                # Expects mean and standard deviation
+                if len(params) != 2:
+                    raise ValueError("Normal distribution requires mean and standard deviation")
+                mean, std = params
+                
+                # Calculate probability density at mean
+                pdf_at_mean = stats.norm.pdf(mean, mean, std)
+                
+                embed.add_field(name="Mean", value=f"{mean}", inline=False)
+                embed.add_field(name="Standard Deviation", value=f"{std}", inline=False)
+                embed.add_field(name="PDF at Mean", value=f"{pdf_at_mean:.4f}", inline=False)
+            
+            elif distribution.lower() == 'binomial':
+                # Expects n (trials) and p (probability of success)
+                if len(params) != 2:
+                    raise ValueError("Binomial distribution requires number of trials and probability")
+                n, p = params
+                
+                # Calculate mean and variance
+                binom_mean = n * p
+                binom_var = n * p * (1 - p)
+                
+                embed.add_field(name="Trials", value=f"{n}", inline=False)
+                embed.add_field(name="Probability of Success", value=f"{p}", inline=False)
+                embed.add_field(name="Mean", value=f"{binom_mean}", inline=False)
+                embed.add_field(name="Variance", value=f"{binom_var}", inline=False)
+            
+            elif distribution.lower() == 'poisson':
+                # Expects lambda (average rate)
+                if len(params) != 1:
+                    raise ValueError("Poisson distribution requires average rate")
+                lam = params[0]
+                
+                # Calculate mean and variance
+                poisson_mean = lam
+                poisson_var = lam
+                
+                embed.add_field(name="Average Rate", value=f"{lam}", inline=False)
+                embed.add_field(name="Mean", value=f"{poisson_mean}", inline=False)
+                embed.add_field(name="Variance", value=f"{poisson_var}", inline=False)
+            
+            else:
+                raise ValueError("Unsupported distribution type")
+            
+            await ctx.respond(embed=embed)
+        
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
+
+def setup(bot):
+    """
+    Set up the Math Cog.
+    
+    Args:
+        bot (commands.Bot): The bot instance
+    """
+    pass  # Cog is now added in Main.py __init__ method

@@ -4,11 +4,19 @@ This module provides physics calculations and formulas for AP Physics 1.
 Covers topics including kinematics, forces, energy, momentum, and rotational motion.
 """
 
-import math
 import discord
-from discord import app_commands
 from discord.ext import commands
+import math
 import numpy as np
+from typing import Optional
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Get guild IDs from environment variable
+GUILD_IDS = [int(guild_id.strip()) for guild_id in os.getenv('GUILD_IDS', '').split(',') if guild_id.strip()]
 
 class Physics(commands.Cog):
     """
@@ -19,215 +27,231 @@ class Physics(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    physics_group = app_commands.Group(name="physics", description="Physics calculations and formulas")
-
-    @physics_group.command(name="kinematics", description="Calculate kinematics values given initial conditions")
-    async def kinematics(self, interaction: discord.Interaction, initial_velocity: float, 
-                        acceleration: float, time: float):
+    @commands.slash_command(name="kinematics", guild_ids=GUILD_IDS)
+    async def kinematics(self, ctx, 
+                         initial_velocity: Optional[float] = 0, 
+                         final_velocity: Optional[float] = 0, 
+                         acceleration: Optional[float] = 0, 
+                         time: Optional[float] = 0, 
+                         displacement: Optional[float] = 0):
         """
-        Calculate displacement and final velocity using kinematics equations.
-        Uses equations: v = v₀ + at, x = x₀ + v₀t + ½at²
+        Calculate kinematics parameters.
         
         Args:
-            initial_velocity: Initial velocity (m/s)
-            acceleration: Acceleration (m/s²)
-            time: Time interval (s)
+            ctx (discord.ApplicationContext): The context of the interaction
+            initial_velocity (Optional[float]): Initial velocity in m/s
+            final_velocity (Optional[float]): Final velocity in m/s
+            acceleration (Optional[float]): Acceleration in m/s²
+            time (Optional[float]): Time in seconds
+            displacement (Optional[float]): Displacement in meters
         """
+        await ctx.defer()
         try:
-            final_velocity = initial_velocity + acceleration * time
-            displacement = initial_velocity * time + 0.5 * acceleration * time * time
+            # Kinematics calculations using provided parameters
+            result = calculate_kinematics(
+                initial_velocity, final_velocity, 
+                acceleration, time, displacement
+            )
             
-            message = "Kinematics Calculations:\n"
-            message += f"Initial velocity (v₀) = {initial_velocity} m/s\n"
-            message += f"Acceleration (a) = {acceleration} m/s²\n"
-            message += f"Time (t) = {time} s\n\n"
-            message += f"Results:\n"
-            message += f"Final velocity (v) = {final_velocity:.2f} m/s\n"
-            message += f"Displacement (Δx) = {displacement:.2f} m"
+            # Create an embed to display results
+            embed = discord.Embed(
+                title="Kinematics Calculation Results", 
+                color=discord.Color.blue()
+            )
             
-            await interaction.response.send_message(message)
+            for key, value in result.items():
+                embed.add_field(name=key, value=f"{value:.2f}", inline=False)
+            
+            await ctx.respond(embed=embed)
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @physics_group.command(name="force", description="Calculate net force and acceleration")
-    async def force(self, interaction: discord.Interaction, mass: float, *forces: float):
+    @commands.slash_command(name="forces", guild_ids=GUILD_IDS)
+    async def force(self, ctx, mass: float, acceleration: float):
         """
-        Calculate net force and resulting acceleration using Newton's Second Law.
+        Calculate force using Newton's Second Law.
         
         Args:
-            mass: Mass of the object (kg)
-            *forces: Variable number of forces (N) to be summed
+            ctx (discord.ApplicationContext): The context of the interaction
+            mass (float): Mass of the object in kg
+            acceleration (float): Acceleration in m/s²
         """
+        await ctx.defer()
         try:
-            if not forces:
-                await interaction.response.send_message("Error: Please provide at least one force")
-                return
-                
-            net_force = sum(forces)
-            acceleration = net_force / mass
-            
-            message = "Force Calculations:\n"
-            message += f"Mass (m) = {mass} kg\n"
-            message += f"Applied forces = {forces} N\n\n"
-            message += f"Results:\n"
-            message += f"Net force (F_net) = {net_force:.2f} N\n"
-            message += f"Acceleration (a) = {acceleration:.2f} m/s²"
-            
-            await interaction.response.send_message(message)
-        except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
-
-    @physics_group.command(name="energy", description="Calculate mechanical energy of a system")
-    async def energy(self, interaction: discord.Interaction, mass: float, height: float, 
-                    velocity: float, gravity: float = 9.81):
-        """
-        Calculate kinetic and potential energy of an object.
-        
-        Args:
-            mass: Mass of the object (kg)
-            height: Height above reference point (m)
-            velocity: Velocity of the object (m/s)
-            gravity: Acceleration due to gravity (m/s², default 9.81)
-        """
-        try:
-            kinetic_energy = 0.5 * mass * velocity * velocity
-            potential_energy = mass * gravity * height
-            total_energy = kinetic_energy + potential_energy
-            
-            message = "Energy Calculations:\n"
-            message += f"Mass (m) = {mass} kg\n"
-            message += f"Height (h) = {height} m\n"
-            message += f"Velocity (v) = {velocity} m/s\n"
-            message += f"Gravity (g) = {gravity} m/s²\n\n"
-            message += f"Results:\n"
-            message += f"Kinetic Energy (KE) = {kinetic_energy:.2f} J\n"
-            message += f"Potential Energy (PE) = {potential_energy:.2f} J\n"
-            message += f"Total Mechanical Energy = {total_energy:.2f} J"
-            
-            await interaction.response.send_message(message)
-        except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
-
-    @physics_group.command(name="momentum", description="Calculate momentum and impulse")
-    async def momentum(self, interaction: discord.Interaction, mass: float, 
-                      initial_velocity: float, final_velocity: float, time: float):
-        """
-        Calculate momentum change and impulse.
-        
-        Args:
-            mass: Mass of the object (kg)
-            initial_velocity: Initial velocity (m/s)
-            final_velocity: Final velocity (m/s)
-            time: Time interval (s)
-        """
-        try:
-            initial_momentum = mass * initial_velocity
-            final_momentum = mass * final_velocity
-            momentum_change = final_momentum - initial_momentum
-            impulse = momentum_change  # F*Δt = Δp
-            average_force = impulse / time
-            
-            message = "Momentum and Impulse Calculations:\n"
-            message += f"Mass (m) = {mass} kg\n"
-            message += f"Initial velocity (v₁) = {initial_velocity} m/s\n"
-            message += f"Final velocity (v₂) = {final_velocity} m/s\n"
-            message += f"Time interval (Δt) = {time} s\n\n"
-            message += f"Results:\n"
-            message += f"Initial momentum (p₁) = {initial_momentum:.2f} kg⋅m/s\n"
-            message += f"Final momentum (p₂) = {final_momentum:.2f} kg⋅m/s\n"
-            message += f"Momentum change (Δp) = {momentum_change:.2f} kg⋅m/s\n"
-            message += f"Impulse (J) = {impulse:.2f} N⋅s\n"
-            message += f"Average force (F_avg) = {average_force:.2f} N"
-            
-            await interaction.response.send_message(message)
-        except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
-
-    @physics_group.command(name="circular", description="Calculate centripetal acceleration and force")
-    async def circular(self, interaction: discord.Interaction, mass: float, radius: float, 
-                      velocity: float):
-        """
-        Calculate centripetal acceleration and force for circular motion.
-        
-        Args:
-            mass: Mass of the object (kg)
-            radius: Radius of circular path (m)
-            velocity: Tangential velocity (m/s)
-        """
-        try:
-            acceleration = (velocity * velocity) / radius
             force = mass * acceleration
-            period = 2 * math.pi * radius / velocity
-            frequency = 1 / period
-            
-            message = "Circular Motion Calculations:\n"
-            message += f"Mass (m) = {mass} kg\n"
-            message += f"Radius (r) = {radius} m\n"
-            message += f"Velocity (v) = {velocity} m/s\n\n"
-            message += f"Results:\n"
-            message += f"Centripetal acceleration (a_c) = {acceleration:.2f} m/s²\n"
-            message += f"Centripetal force (F_c) = {force:.2f} N\n"
-            message += f"Period (T) = {period:.2f} s\n"
-            message += f"Frequency (f) = {frequency:.2f} Hz"
-            
-            await interaction.response.send_message(message)
+            await ctx.respond(f"Force = {force:.2f} N (Mass: {mass} kg, Acceleration: {acceleration} m/s²)")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @physics_group.command(name="spring", description="Calculate spring force and energy")
-    async def spring(self, interaction: discord.Interaction, spring_constant: float, 
-                    displacement: float):
+    @commands.slash_command(name="energy", guild_ids=GUILD_IDS)
+    async def energy(self, ctx, mass: float, height: Optional[float] = None, velocity: Optional[float] = None):
         """
-        Calculate spring force and potential energy using Hooke's Law.
+        Calculate potential or kinetic energy.
         
         Args:
-            spring_constant: Spring constant k (N/m)
-            displacement: Displacement from equilibrium (m)
+            ctx (discord.ApplicationContext): The context of the interaction
+            mass (float): Mass of the object in kg
+            height (Optional[float]): Height in meters for potential energy
+            velocity (Optional[float]): Velocity in m/s for kinetic energy
         """
+        await ctx.defer()
         try:
-            force = -spring_constant * displacement  # Negative because it's a restoring force
-            potential_energy = 0.5 * spring_constant * displacement * displacement
+            # Gravitational acceleration constant
+            g = 9.8  # m/s²
             
-            message = "Spring Calculations:\n"
-            message += f"Spring constant (k) = {spring_constant} N/m\n"
-            message += f"Displacement (x) = {displacement} m\n\n"
-            message += f"Results:\n"
-            message += f"Spring force (F) = {force:.2f} N\n"
-            message += f"Spring potential energy (U) = {potential_energy:.2f} J"
+            # Calculate potential energy if height is provided
+            if height is not None:
+                potential_energy = mass * g * height
+                await ctx.respond(f"Potential Energy = {potential_energy:.2f} J (Mass: {mass} kg, Height: {height} m)")
             
-            await interaction.response.send_message(message)
+            # Calculate kinetic energy if velocity is provided
+            elif velocity is not None:
+                kinetic_energy = 0.5 * mass * (velocity ** 2)
+                await ctx.respond(f"Kinetic Energy = {kinetic_energy:.2f} J (Mass: {mass} kg, Velocity: {velocity} m/s)")
+            
+            else:
+                await ctx.respond("Please provide either height or velocity to calculate energy.")
+        
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @physics_group.command(name="rotation", description="Calculate rotational motion values")
-    async def rotation(self, interaction: discord.Interaction, moment_of_inertia: float, 
-                      angular_velocity: float, radius: float):
+    @commands.slash_command(name="momentum", guild_ids=GUILD_IDS)
+    async def momentum(self, ctx, mass: float, velocity: float):
         """
-        Calculate rotational kinetic energy and angular momentum.
+        Calculate momentum.
         
         Args:
-            moment_of_inertia: Moment of inertia (kg⋅m²)
-            angular_velocity: Angular velocity (rad/s)
-            radius: Distance from rotation axis (m)
+            ctx (discord.ApplicationContext): The context of the interaction
+            mass (float): Mass of the object in kg
+            velocity (float): Velocity of the object in m/s
+        """
+        await ctx.defer()
+        try:
+            mom = mass * velocity
+            await ctx.respond(f"Momentum = {mom:.2f} kg⋅m/s (Mass: {mass} kg, Velocity: {velocity} m/s)")
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
+
+    @commands.slash_command(name="rotation", guild_ids=GUILD_IDS)
+    async def rotation(self, ctx, torque: Optional[float] = None, moment_of_inertia: Optional[float] = None, angular_acceleration: Optional[float] = None):
+        """
+        Calculate rotational motion parameters.
+        
+        Args:
+            ctx (discord.ApplicationContext): The context of the interaction
+            torque (Optional[float]): Torque in N⋅m
+            moment_of_inertia (Optional[float]): Moment of inertia in kg⋅m²
+            angular_acceleration (Optional[float]): Angular acceleration in rad/s²
+        """
+        await ctx.defer()
+        try:
+            # Torque = Moment of Inertia * Angular Acceleration
+            if torque is not None and moment_of_inertia is not None:
+                calculated_angular_acceleration = torque / moment_of_inertia
+                await ctx.respond(f"Angular Acceleration = {calculated_angular_acceleration:.2f} rad/s² (Torque: {torque} N⋅m, Moment of Inertia: {moment_of_inertia} kg⋅m²)")
+            
+            elif moment_of_inertia is not None and angular_acceleration is not None and torque is None:
+                calculated_torque = moment_of_inertia * angular_acceleration
+                await ctx.respond(f"Torque = {calculated_torque:.2f} N⋅m (Moment of Inertia: {moment_of_inertia} kg⋅m², Angular Acceleration: {angular_acceleration} rad/s²)")
+            
+            else:
+                await ctx.respond("Please provide sufficient parameters to calculate rotational motion.")
+        
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
+
+    @commands.slash_command(name="projectile_motion", description="Calculate projectile motion parameters", guild_ids=GUILD_IDS)
+    async def projectile_motion(
+        self, 
+        ctx, 
+        initial_velocity: float, 
+        angle: float, 
+        height: float = 0
+    ):
+        """
+        Calculate projectile motion parameters.
+        
+        Args:
+            ctx (discord.ApplicationContext): The context of the interaction
+            initial_velocity: Initial velocity in m/s
+            angle: Launch angle in degrees
+            height: Initial height in meters. Defaults to 0.
         """
         try:
-            rotational_ke = 0.5 * moment_of_inertia * angular_velocity * angular_velocity
-            angular_momentum = moment_of_inertia * angular_velocity
-            tangential_velocity = angular_velocity * radius
+            # Convert angle to radians
+            angle_rad = math.radians(angle)
             
-            message = "Rotational Motion Calculations:\n"
-            message += f"Moment of inertia (I) = {moment_of_inertia} kg⋅m²\n"
-            message += f"Angular velocity (ω) = {angular_velocity} rad/s\n"
-            message += f"Radius (r) = {radius} m\n\n"
-            message += f"Results:\n"
-            message += f"Rotational kinetic energy = {rotational_ke:.2f} J\n"
-            message += f"Angular momentum (L) = {angular_momentum:.2f} kg⋅m²/s\n"
-            message += f"Tangential velocity (v) = {tangential_velocity:.2f} m/s"
+            # Calculate horizontal and vertical components of velocity
+            v0x = initial_velocity * math.cos(angle_rad)
+            v0y = initial_velocity * math.sin(angle_rad)
             
-            await interaction.response.send_message(message)
+            # Calculate time of flight
+            # Using quadratic formula for time with initial height
+            g = 9.8  # Acceleration due to gravity
+            time_of_flight = (v0y + math.sqrt(v0y**2 + 2*g*height)) / g
+            
+            # Calculate maximum height
+            max_height = height + (v0y**2 / (2*g))
+            
+            # Calculate horizontal range
+            range_distance = v0x * time_of_flight
+            
+            # Create an embed to display results
+            embed = discord.Embed(
+                title="Projectile Motion Calculation",
+                color=discord.Color.blue()
+            )
+            embed.add_field(name="Initial Velocity", value=f"{initial_velocity} m/s", inline=False)
+            embed.add_field(name="Launch Angle", value=f"{angle}°", inline=False)
+            embed.add_field(name="Initial Height", value=f"{height} m", inline=False)
+            embed.add_field(name="Time of Flight", value=f"{time_of_flight:.2f} s", inline=False)
+            embed.add_field(name="Maximum Height", value=f"{max_height:.2f} m", inline=False)
+            embed.add_field(name="Horizontal Range", value=f"{range_distance:.2f} m", inline=False)
+            
+            await ctx.respond(embed=embed)
+        
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-async def setup(bot):
-    """Register the Physics cog with the bot."""
-    await bot.add_cog(Physics(bot))
+    @commands.slash_command(name="pendulum_period", description="Calculate pendulum period", guild_ids=GUILD_IDS)
+    async def pendulum_period(
+        self, 
+        ctx, 
+        length: float
+    ):
+        """
+        Calculate the period of a simple pendulum.
+        
+        Args:
+            ctx (discord.ApplicationContext): The context of the interaction
+            length: Length of the pendulum in meters
+        """
+        try:
+            # Gravitational acceleration constant
+            g = 9.8
+            
+            # Calculate period using simple pendulum formula
+            period = 2 * math.pi * math.sqrt(length / g)
+            
+            # Create an embed to display results
+            embed = discord.Embed(
+                title="Simple Pendulum Period Calculation",
+                color=discord.Color.green()
+            )
+            embed.add_field(name="Pendulum Length", value=f"{length} m", inline=False)
+            embed.add_field(name="Gravitational Acceleration", value=f"{g} m/s²", inline=False)
+            embed.add_field(name="Pendulum Period", value=f"{period:.2f} s", inline=False)
+            
+            await ctx.respond(embed=embed)
+        
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
+
+def setup(bot):
+    """
+    Set up the Physics Cog.
+    
+    Args:
+        bot (commands.Bot): The bot instance
+    """
+    pass  # Cog is now added in Main.py __init__ method

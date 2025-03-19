@@ -1,5 +1,2 @@
-
-token.json
-token.pickle
 .env
-credentials.json
+service_account.json

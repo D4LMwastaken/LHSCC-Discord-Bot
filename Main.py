@@ -5,12 +5,10 @@ This file serves as the entry point for the Discord bot and manages core functio
 
 import discord
 from discord.ext import commands
-from discord import app_commands
 import os
 from dotenv import load_dotenv
 import asyncio
 import random
-from cogs.Gemini import gemini_generate
 import logging
 
 """ Comment notes:
@@ -26,12 +24,10 @@ logging.basicConfig(
 # Load environment variables from .env file
 load_dotenv()
 TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+APPLICATION_ID = os.getenv('DISCORD_APPLICATION_ID')
 
 # List of guild IDs where the bot will be active
-GUILD_IDS = [
-    1228003403171627078,
-    1239233526835056781
-]
+GUILD_IDS = [int(guild_id.strip()) for guild_id in os.getenv('GUILD_IDS', '').split(',') if guild_id.strip()]
 
 class Bot(commands.Bot):
     """
@@ -39,146 +35,313 @@ class Bot(commands.Bot):
     Handles initialization of cogs and core bot functionality.
     """
     def __init__(self):
-        # Initialize bot with command prefix and all intents enabled
-        super().__init__(command_prefix="!", intents=discord.Intents.all())
-        # List of cogs to be loaded on startup
-        self.initial_extensions = [
-            'cogs.KeywordsAndResponses',
-            'cogs.Math',
-            'cogs.Gemini',
-            'cogs.Calendar',
-            'cogs.Physics'
-        ]
+        """
+        Create bot instance with intents and load initial extensions.
+        """
+        # Create bot instance with intents
+        intents = discord.Intents.default()
+        intents.message_content = True
+        intents.members = True  # Enable member events
+        super().__init__(command_prefix='!', intents=intents, application_id=APPLICATION_ID)
+        
+        # Dynamically find all cogs in the cogs directory
+        self.initial_extensions = []
+        cogs_dir = os.path.join(os.path.dirname(__file__), 'cogs')
+        for filename in os.listdir(cogs_dir):
+            if filename.endswith('.py') and not filename.startswith('__'):
+                module_name = f'cogs.{filename[:-3]}'
+                self.initial_extensions.append(module_name)
+        
+        # Dynamically import and add cogs
+        for module_name in self.initial_extensions:
+            try:
+                module = __import__(module_name, fromlist=['setup'])
+                
+                # Check if the module has a setup function
+                if hasattr(module, 'setup'):
+                    # Find the cog class dynamically
+                    cog_classes = [getattr(module, name) for name in dir(module) 
+                                   if isinstance(getattr(module, name), type) and 
+                                   issubclass(getattr(module, name), commands.Cog) and 
+                                   getattr(module, name) is not commands.Cog]
+                    
+                    if cog_classes:
+                        cog_class = cog_classes[0]
+                        self.add_cog(cog_class(self))
+                        print(f"Loaded {module_name} cog successfully!")
+                    else:
+                        print(f"No Cog class found in {module_name}")
+                else:
+                    print(f"No setup function found in {module_name}")
+            except Exception as e:
+                print(f"Error loading {module_name} cog: {str(e)}")
+                import traceback
+                traceback.print_exc()
 
     async def setup_hook(self):
         """
-        Loads all cogs during bot startup.
+        Loads all cogs during bot startup using Pycord's extension loading.
         Prints success/error messages for each cog loading attempt.
         """
-        for ext in self.initial_extensions:
-            try:
-                if ext not in [extension for extension in self.extensions]:
-                    await self.load_extension(ext)
-                    print(f"Loaded {ext} cog successfully!")
-            except Exception as e:
-                print(f"Error loading {ext} cog: {str(e)}")
+        try:
+            # Sync commands globally to ensure all slash commands are registered
+            print("Syncing global slash commands...")
+            
+            # Get all registered commands before sync
+            before_commands = await self.fetch_commands() # noqa
+            print(f"Commands before sync: {[cmd.name for cmd in before_commands]}")
+            
+            # Sync commands with more verbose logging
+            synced_commands = await self.sync_commands(force=True)
+            print(f"Synced commands: {[cmd.name for cmd in synced_commands]}") # noqa
+            
+            # Get all registered commands after sync
+            after_commands = await self.fetch_commands() # noqa
+            print(f"Commands after sync: {[cmd.name for cmd in after_commands]}")
+        
+        except Exception as e:
+            print(f"Error in setup_hook: {e}")
+            import traceback
+            traceback.print_exc()
 
     async def on_ready(self):
         """
-        Event handler for when the bot is ready.
-        Prints bot information and syncs commands to guilds.
+        Event handler for when the bot is ready and connected to Discord.
+        Loads initial extensions and sets up bot status.
         """
-        print(f"Logged in as {self.user.name}")
-        print(f"Bot latency: {round(self.latency * 1000)}ms")
-        print(f"Bot is in {len(self.guilds)} guilds.")
+        try:
+            # Set bot's status
+            await self.change_presence(
+                status=discord.Status.online, 
+                activity=discord.Game(name="Helping Largo High School Coding Club")
+            )
+            
+            print(f'Logged in as {self.user} (ID: {self.user.id})') #noqa
+            print('------')
         
-        # Sync commands to each guild
-        print("\nSyncing commands to specific guilds...")
-        for guild_id in GUILD_IDS:
-            guild = discord.Object(id=guild_id)
-            try:
-                await self.tree.sync(guild=guild)
-                print(f"Successfully synced commands to guild {guild_id}")
-            except Exception as e:
-                print(f"Error syncing to guild {guild_id}: {str(e)}")
-
-        print("Command synchronization complete!")
+        except Exception as e:
+            print(f"An error occurred during bot setup: {e}")
+            import traceback
+            traceback.print_exc()
 
     async def on_member_join(self, member: discord.Member):
         """
-        Event handler for when a member joins the server.
-        Sends a welcome message to the welcome channel.
+        Event handler for when a new member joins the server.
+        Sends a welcome message to the system channel using Gemini API.
+        
+        Args:
+            member (discord.Member): The member who joined the server
         """
-        print("Someone joined the Discord Server")
-        parameter = (f"In under 2000 characters, generate a welcome message for the Largo High School Coding Club. Tell "
-                  f"the user {member} a greeting with a {member.mention}. Add this to the message: We accept newbies. "
-                  f"Tell them to check out #rules and #roles. Tell them to introduce themselves in #introductions")
-        response = gemini_generate(parameter)
-        welcome_channel = discord.utils.get(member.guild.text_channels, name="welcome")
-        if welcome_channel:
-            await welcome_channel.send(response)
+        try:
+            # Try to get the system channel of the guild
+            system_channel = member.guild.system_channel
+            
+            if system_channel:
+                # Generate welcome message using Gemini
+                from cogs.Gemini import gemini_generate
+                
+                # Craft a prompt to generate a personalized welcome message
+                welcome_prompt = (
+                    f"Generate a warm, engaging welcome message for a new member named {member.name} "
+                    f"joining the Largo High School Coding Club Discord server. "
+                    "The message should be friendly, encouraging, and include:"
+                    "- A personalized greeting"
+                    "- Encouragement to explore the server"
+                    "- Suggestion to check out #announcements and #roles"
+                    "- Invitation to introduce themselves"
+                    "Keep the tone friendly, supportive, and exciting for a high school coding club. "
+                    "Limit the message to 250 words."
+                )
+                
+                # Generate welcome message
+                welcome_text = gemini_generate(welcome_prompt)
+                
+                # Create a welcoming embed
+                welcome_embed = discord.Embed(
+                    title="Welcome to the Largo High School Coding Club!",
+                    description=welcome_text,
+                    color=discord.Color.green()
+                )
+                
+                # Set the member's avatar as the thumbnail
+                welcome_embed.set_thumbnail(url=member.display_avatar.url)
+                
+                # Add a footer with additional guidance
+                welcome_embed.set_footer(text="Tip: Check out our channels and introduce yourself!")
+                
+                # Send the welcome message
+                await system_channel.send(f"{member.mention}", embed=welcome_embed)
+                
+                logging.info(f"Sent Gemini-generated welcome message for {member.name} in {member.guild.name}")
+            else:
+                logging.warning(f"No system channel found in {member.guild.name}")
+        
+        except Exception as e:
+            logging.error(f"Error sending welcome message: {e}")
+            import traceback
+            traceback.print_exc()
+
+    async def on_member_remove(self, member: discord.Member):
+        """
+        Event handler for when a member leaves the server.
+        Sends a farewell message to the system channel using Gemini API.
+        
+        Args:
+            member (discord.Member): The member who left the server
+        """
+        try:
+            # Try to get the system channel of the guild
+            system_channel = member.guild.system_channel
+            
+            if system_channel:
+                # Generate farewell message using Gemini
+                from cogs.Gemini import gemini_generate
+                
+                # Craft a prompt to generate a personalized farewell message
+                farewell_prompt = (
+                    f"Generate a thoughtful, kind farewell message for a member named {member.name} "
+                    f"who is leaving the Largo High School Coding Club Discord server. "
+                    "The message should be:"
+                    "- Respectful and understanding"
+                    "- Acknowledging their time in the community"
+                    "- Wishing them well in future endeavors"
+                    "- Leaving the door open for potential return"
+                    "Keep the tone warm, supportive, and positive. "
+                    "Limit the message to 250 words."
+                )
+                
+                # Generate farewell message
+                farewell_text = gemini_generate(farewell_prompt)
+                
+                # Create a farewell embed
+                farewell_embed = discord.Embed(
+                    title="Farewell from Largo High School Coding Club",
+                    description=farewell_text,
+                    color=discord.Color.red()
+                )
+                
+                # Set a default avatar if member has left
+                farewell_embed.set_thumbnail(url="https://cdn.discordapp.com/embed/avatars/0.png")
+                
+                # Add a footer with a supportive message
+                farewell_embed.set_footer(text="We hope to see you again in the future!")
+                
+                # Send the farewell message
+                await system_channel.send(embed=farewell_embed)
+                
+                logging.info(f"Sent Gemini-generated farewell message for {member.name} in {member.guild.name}")
+            else:
+                logging.warning(f"No system channel found in {member.guild.name}")
+        
+        except Exception as e:
+            logging.error(f"Error sending farewell message: {e}")
+            import traceback
+            traceback.print_exc()
 
 bot = Bot()
 
-@bot.tree.command(name="ping", description="Check the bot's latency")
-@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+@bot.slash_command(name="ping", description="Check the bot's latency", guild_ids=GUILD_IDS)
 async def ping(interaction: discord.Interaction):
     """Command to check bot's latency/response time"""
     await interaction.response.send_message(f"Pong! Latency: {round(bot.latency * 1000)}ms")
 
-@bot.tree.command(name="hi", description="Say hello to the bot!")
-@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+@bot.slash_command(name="hi", description="Say hello to the bot!", guild_ids=GUILD_IDS)
 async def hi(interaction: discord.Interaction):
     """Friendly greeting command with randomized responses"""
     greetings = ["Hello!", "What's up!", "Howdy!", "Greetings!"]
     response = random.choice(greetings)
     await interaction.response.send_message(response)
 
-@bot.tree.command(name="help", description="Get information about available commands")
-@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+@bot.slash_command(name="help", description="Get information about available commands", guild_ids=GUILD_IDS)
 async def help(interaction: discord.Interaction):
     """Displays help information about available commands"""
     commands = ["/Music", "/Pet", "/Book", "/Video Games", "/PING", "/Job", "/About Me", "/Bye", "/Help", "/Version",
                 "/New Stuff", "/Self Destruct", "/Gemini", "/gemini ask", "/gemini explain", "/gemini summarize", "/gemini brainstorm"]
     await interaction.response.send_message(" ".join(commands))
 
-@bot.tree.command(name="bye", description="Say goodbye to the bot!")
-@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+@bot.slash_command(name="bye", description="Say goodbye to the bot!", guild_ids=GUILD_IDS)
 async def bye(interaction: discord.Interaction):
     """Farewell command with shutdown functionality"""
     await interaction.response.send_message("Goodbye! Shutting down...")
     await bot.close()
 
-@bot.tree.command(name="version", description="Get the current version of the bot")
-@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+@bot.slash_command(name="version", description="Get the current version of the bot", guild_ids=GUILD_IDS)
 async def version(interaction: discord.Interaction):
     """Displays current bot version information"""
-    Version = "3.0"
-    DateUpdated = "11/27/2024"
+    Version = "3.2"
+    DateUpdated = "3/19/2025"
     Language = "Python"
     Discord_API_Wrapper = "Pycord"
     Dev = "D4LM"
     CoDev = "None is the apprentice yet..."
     await interaction.response.send_message("Version: " + Version + "\n" + "Date Updated: " + DateUpdated + "\n" + "Language: " + Language +
-                      "\n" + "Developer: " + Dev + "\n" + "Assistant Developer/maintainer: " + CoDev)
+                      "\n" + "Disocrd API Wrapper: " + Discord_API_Wrapper + "\n" + "Developer: " + Dev + "\n" + "Assistant Developer/Mentor: "
+                      + CoDev)
 
-@bot.tree.command(name="new_stuff", description="See what's new in the latest update")
-@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+@bot.slash_command(name="new_stuff", description="See what's new in the latest update", guild_ids=GUILD_IDS)
 async def new_stuff(interaction: discord.Interaction):
     """Shows changelog and updates for the latest version"""
     Version = "3.0"
-    UpdatedItems = ("Version 3.0 is here!" + "\n" + 
-               "* Added Google Calendar integration\n" +
-               "* New calendar commands: /events and /add_event\n" +
-               "* View and manage your Google Calendar directly from Discord\n" +
-               "* Added Gemini AI integration with /gemini ask, /gemini explain, /gemini summarize, and /gemini brainstorm commands\n"
-               "* Added Physics and more math commands\n")
+    UpdatedItems = ("Changes in version 3.2:\n"
+                "* Security fixes\n"
+                "* Calendar API now uses service account so that calendar commands can run forever(hopefully)...\n"
+                "* General cleanup...\n")
     await interaction.response.send_message("For version " + Version + ".\nHere is the Changelog: " + UpdatedItems)
 
-@bot.tree.command(name="self_destruct", description="Shut down the bot dramatically")
-@app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
+@bot.slash_command(name="self_destruct", description="Shut down the bot dramatically", guild_ids=GUILD_IDS)
 async def self_destruct(interaction: discord.Interaction):
     """Dramatic shutdown command with countdown"""
     await interaction.response.send_message("💥 SELF DESTRUCT SEQUENCE INITIATED 💥")
     for i in range(5, 0, -1):
-        await interaction.channel.send(str(i))
+        await interaction.channel.send(str(i)) #noqa
         await asyncio.sleep(1)
-    await interaction.channel.send("BOOM! The bot has exploded! 💥")
+    await interaction.channel.send("BOOM! The bot has exploded! 💥") #noqa
     await bot.close()
 
-async def on_member_remove(member: discord.Member):
+@bot.slash_command(name="rate_limit_status", description="Check Discord API rate limit status", guild_ids=GUILD_IDS)
+async def rate_limit_status(interaction: discord.Interaction):
     """
-    Event handler for when a member leaves the server.
-    Sends a farewell message to the system channel.
-    """
-    server = member.guild
-    question = f"Write a farewell message for {member} leaving."
-    response = gemini_generate(question)
+    Check the bot's current rate limit status and latency.
     
-    if server.system_channel is not None:
-       await server.system_channel.send(response)
-
-bot.add_listener(on_member_remove, 'on_member_remove')
+    Args:
+        interaction (discord.Interaction): The interaction to respond to
+    """
+    try:
+        # Calculate bot latency
+        latency = round(bot.latency * 1000, 2)  # Convert to milliseconds
+        
+        # Assess rate limit risk based on latency
+        if latency < 50:
+            risk_level = "Low"
+            color = discord.Color.green()
+        elif 50 <= latency < 150:
+            risk_level = "Moderate"
+            color = discord.Color.yellow()
+        else:
+            risk_level = "High"
+            color = discord.Color.red()
+        
+        # Create an embed to display rate limit status
+        embed = discord.Embed(
+            title="🚦 Bot Rate Limit Status",
+            description="Current performance metrics for the Discord bot",
+            color=color
+        )
+        embed.add_field(name="Latency", value=f"{latency} ms", inline=False)
+        embed.add_field(name="Risk Level", value=risk_level, inline=False)
+        
+        # Add recommendations based on risk level
+        if risk_level == "Low":
+            embed.add_field(name="Status", value="✅ Bot is performing optimally", inline=False)
+        elif risk_level == "Moderate":
+            embed.add_field(name="Recommendation", value="⚠️ Monitor bot performance", inline=False)
+        else:
+            embed.add_field(name="Recommendation", value="🛑 Consider reducing bot load or checking network", inline=False)
+        
+        await interaction.response.send_message(embed=embed)
+    
+    except Exception as e:
+        await interaction.response.send_message(f"An error occurred while checking rate limit status: {str(e)}")
 
 def run_bot():
     """Main function to start the bot"""

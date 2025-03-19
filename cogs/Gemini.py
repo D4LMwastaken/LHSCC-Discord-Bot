@@ -3,24 +3,23 @@ Gemini AI integration cog that provides natural language processing capabilities
 This cog handles all interactions with Google's Gemini-Pro AI model.
 """
 
-import discord
-from discord import app_commands
 from discord.ext import commands
-import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
 
-# Load environment variables and configure Gemini AI
+# Load environment variables
 load_dotenv()
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel('gemini-pro')
 
-# List of guild IDs where the bot will be active
-GUILD_IDS = [
-    1228003403171627078,
-    1239233526835056781
-]
+# Get guild IDs from environment variable
+GUILD_IDS = [int(guild_id.strip()) for guild_id in os.getenv('GUILD_IDS', '').split(',') if guild_id.strip()]
+
+# Get Google API key from environment variable
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+
+# Configure Gemini AI
+genai.configure(api_key=GOOGLE_API_KEY)
+model = genai.GenerativeModel('gemini-2.0-pro-exp-02-05')
 
 def gemini_generate(prompt):
     """
@@ -49,35 +48,35 @@ def split_response(response, max_length=1800):
     Returns:
         list: List of response chunks
     """
+    # Split the response into chunks
     chunks = []
     current_chunk = ""
     
-    # Split by lines to avoid cutting words
-    lines = response.split('\n')
+    # Split response into words to avoid breaking words
+    words = response.split()
     
-    for line in lines:
-        # If adding this line would exceed the limit, start a new chunk
-        if len(current_chunk) + len(line) + 1 > max_length:
-            if current_chunk:
-                chunks.append(current_chunk.strip())
-            current_chunk = line
-        else:
-            if current_chunk:
-                current_chunk += '\n'
-            current_chunk += line
+    for word in words:
+        # If adding this word would exceed max length, start a new chunk
+        if len(current_chunk) + len(word) + 1 > max_length:
+            chunks.append(current_chunk.strip())
+            current_chunk = ""
+        
+        # Add word to current chunk
+        current_chunk += word + " "
     
-    # Add the last chunk if it's not empty
+    # Add the last chunk if not empty
     if current_chunk:
         chunks.append(current_chunk.strip())
     
     return chunks
 
-class Gemini(commands.GroupCog, group_name="gemini"):
+class Gemini(commands.Cog):
     """
     Cog for handling Gemini AI commands.
     Provides various AI-powered features like asking questions, explaining concepts,
     summarizing text, and brainstorming ideas.
     """
+    
     def __init__(self, bot):
         """
         Initialize the Gemini cog.
@@ -86,113 +85,152 @@ class Gemini(commands.GroupCog, group_name="gemini"):
             bot (commands.Bot): The bot instance
         """
         self.bot = bot
-        super().__init__()
 
-    async def send_long_response(self, interaction, response):
-        """
-        Send a response that might be longer than Discord's message limit.
-        
-        Args:
-            interaction (discord.Interaction): The interaction to respond to
-            response (str): The response text
-        """
-        chunks = split_response(response)
-        total_chunks = len(chunks)
-        
-        # Send first chunk
-        first_message = chunks[0]
-        if total_chunks > 1:
-            footer = f"\n\n-# Page 1 of {total_chunks}"
-            first_message = first_message + footer
-        await interaction.followup.send(first_message)
-        
-        # Send remaining chunks with message count
-        for i, chunk in enumerate(chunks[1:], 2):
-            footer = f"\n\n-# Page {i} of {total_chunks}"
-            message = chunk + footer
-            await interaction.channel.send(message)
-
-    @app_commands.command(name="ask", description="Ask Gemini AI a question")
-    @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
-    async def ask(self, interaction: discord.Interaction, question: str):
+    @commands.slash_command(name="ask", guild_ids=GUILD_IDS)
+    async def ask(self, ctx, question: str):
         """
         Ask Gemini AI a question.
         
         Args:
-            interaction (discord.Interaction): The interaction to respond to
+            ctx (discord.ApplicationContext): The context of the interaction
             question (str): The question to ask
         """
+        await ctx.defer()  # Defer the response to handle longer processing times
         try:
-            await interaction.response.defer()
-            prompt = (f"You are responding to a Discord user. Start your response by mentioning them with {interaction.user.mention}. "
-                     f"The question is from {interaction.user.name}: {question}")
-            response = gemini_generate(prompt)
-            await self.send_long_response(interaction, response)
+            # Generate response using Gemini AI
+            response = gemini_generate(question)
+            
+            # Split response if it's too long
+            response_chunks = split_response(response)
+            
+            # Send the first chunk
+            if response_chunks:
+                await ctx.respond(response_chunks[0])
+                
+                # Send additional chunks if they exist
+                for chunk in response_chunks[1:]:
+                    await ctx.send(chunk)
         except Exception as e:
-            await interaction.followup.send(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @app_commands.command(name="explain", description="Ask Gemini AI to explain a concept")
-    @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
-    async def explain(self, interaction: discord.Interaction, topic: str):
+    @commands.slash_command(name="explain", guild_ids=GUILD_IDS)
+    async def explain(self, ctx, topic: str):
         """
         Ask Gemini AI to explain a concept.
         
         Args:
-            interaction (discord.Interaction): The interaction to respond to
-            topic (str): The concept to explain
+            ctx (discord.ApplicationContext): The context of the interaction
+            topic (str): The topic to explain
         """
+        await ctx.defer()  # Defer the response to handle longer processing times
         try:
-            await interaction.response.defer()
-            prompt = (f"You are responding to a Discord user. Start your response by mentioning them with {interaction.user.mention}. "
-                     f"{interaction.user.name} has asked for an explanation of: {topic}")
+            # Generate explanation using Gemini AI
+            prompt = f"Explain the concept of {topic} in a clear and concise manner."
             response = gemini_generate(prompt)
-            await self.send_long_response(interaction, response)
+            
+            # Split response if it's too long
+            response_chunks = split_response(response)
+            
+            # Send the first chunk
+            if response_chunks:
+                await ctx.respond(response_chunks[0])
+                
+                # Send additional chunks if they exist
+                for chunk in response_chunks[1:]:
+                    await ctx.send(chunk)
         except Exception as e:
-            await interaction.followup.send(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @app_commands.command(name="summarize", description="Ask Gemini AI to summarize text")
-    @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
-    async def summarize(self, interaction: discord.Interaction, text: str):
+    @commands.slash_command(name="summarize", guild_ids=GUILD_IDS)
+    async def summarize(self, ctx, text: str):
         """
-        Ask Gemini AI to summarize text.
+        Ask Gemini AI to summarize a given text.
         
         Args:
-            interaction (discord.Interaction): The interaction to respond to
+            ctx (discord.ApplicationContext): The context of the interaction
             text (str): The text to summarize
         """
+        await ctx.defer()  # Defer the response to handle longer processing times
         try:
-            await interaction.response.defer()
-            prompt = (f"You are responding to a Discord user. Start your response by mentioning them with {interaction.user.mention}. "
-                     f"{interaction.user.name} has asked for a summary of: {text}")
+            # Generate summary using Gemini AI
+            prompt = f"Summarize the following text concisely: {text}"
             response = gemini_generate(prompt)
-            await self.send_long_response(interaction, response)
+            
+            # Split response if it's too long
+            response_chunks = split_response(response)
+            
+            # Send the first chunk
+            if response_chunks:
+                await ctx.respond(response_chunks[0])
+                
+                # Send additional chunks if they exist
+                for chunk in response_chunks[1:]:
+                    await ctx.send(chunk)
         except Exception as e:
-            await interaction.followup.send(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @app_commands.command(name="brainstorm", description="Ask Gemini AI to brainstorm ideas")
-    @app_commands.guilds(*[discord.Object(id=guild_id) for guild_id in GUILD_IDS])
-    async def brainstorm(self, interaction: discord.Interaction, topic: str):
+    @commands.slash_command(name="brainstorm", guild_ids=GUILD_IDS)
+    async def brainstorm(self, ctx, topic: str):
         """
         Ask Gemini AI to brainstorm ideas.
         
         Args:
-            interaction (discord.Interaction): The interaction to respond to
+            ctx (discord.ApplicationContext): The context of the interaction
             topic (str): The topic to brainstorm
         """
+        await ctx.defer()  # Defer the response to handle longer processing times
         try:
-            await interaction.response.defer()
-            prompt = (f"You are responding to a Discord user. Start your response by mentioning them with {interaction.user.mention}. "
-                     f"{interaction.user.name} has asked for a brainstorming session about: {topic}")
+            # Generate brainstorming ideas using Gemini AI
+            prompt = f"Provide a list of creative ideas or potential approaches for the following topic: {topic}"
             response = gemini_generate(prompt)
-            await self.send_long_response(interaction, response)
+            
+            # Split response if it's too long
+            response_chunks = split_response(response)
+            
+            # Send the first chunk
+            if response_chunks:
+                await ctx.respond(response_chunks[0])
+                
+                # Send additional chunks if they exist
+                for chunk in response_chunks[1:]:
+                    await ctx.send(chunk)
         except Exception as e:
-            await interaction.followup.send(f"An error occurred: {str(e)}")
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-async def setup(bot):
+    @commands.slash_command(name="code_help", guild_ids=GUILD_IDS)
+    async def code_help(self, ctx, language: str, problem: str):
+        """
+        Ask Gemini AI for coding help.
+        
+        Args:
+            ctx (discord.ApplicationContext): The context of the interaction
+            language (str): The programming language
+            problem (str): Description of the coding problem
+        """
+        await ctx.defer()  # Defer the response to handle longer processing times
+        try:
+            # Generate code help using Gemini AI
+            prompt = f"Provide a solution in {language} for the following coding problem: {problem}"
+            response = gemini_generate(prompt)
+            
+            # Split response if it's too long
+            response_chunks = split_response(response)
+            
+            # Send the first chunk
+            if response_chunks:
+                await ctx.respond(response_chunks[0])
+                
+                # Send additional chunks if they exist
+                for chunk in response_chunks[1:]:
+                    await ctx.send(chunk)
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
+
+def setup(bot):
     """
-    Set up the Gemini cog.
+    Set up the Gemini Cog.
     
     Args:
         bot (commands.Bot): The bot instance
     """
-    await bot.add_cog(Gemini(bot))
+    pass  # Cog is now added in Main.py __init__ method

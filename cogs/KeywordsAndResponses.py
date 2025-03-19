@@ -1,148 +1,193 @@
 """
 Keywords and Responses Cog for Discord Bot
-This module handles casual conversation responses for various topics.
-Provides engaging and friendly responses to common conversation topics.
+This module manages keywords and their associated responses using a JSON file.
 """
 
 import discord
-from discord import app_commands
 from discord.ext import commands
+import json
+import os
 import random
+from dotenv import load_dotenv
 
-# Predefined responses for different conversation topics
-music_responses = [
-    "I love listening to all kinds of music! What's your favorite genre?",
-    "Music is the universal language that connects us all!",
-    "Nothing beats a good melody to lift your spirits!",
-    "From classical to rock, every genre has its own unique beauty."
-]
+# Load environment variables
+load_dotenv()
 
-pet_responses = [
-    "Pets are wonderful companions! Do you have any?",
-    "Dogs, cats, or maybe something more exotic?",
-    "Animals bring so much joy to our lives!",
-    "I'd love to hear about your pets!"
-]
+# Get guild IDs from environment variable
+GUILD_IDS = [int(guild_id.strip()) for guild_id in os.getenv('GUILD_IDS', '').split(',') if guild_id.strip()]
 
-book_responses = [
-    "Reading opens up whole new worlds!",
-    "Books are a great way to learn and explore!",
-    "What's your favorite book genre?",
-    "Nothing beats curling up with a good book!"
-]
+# Path to the keywords JSON file
+KEYWORDS_FILE = os.path.join(os.path.dirname(__file__), 'keywords.json')
 
-video_game_responses = [
-    "Gaming is such a fun way to spend time!",
-    "What games have you been playing lately?",
-    "From indie to AAA, there's something for everyone!",
-    "Games are a great way to challenge yourself and have fun!"
-]
-
-job_responses = [
-    "Every job has its own unique challenges and rewards!",
-    "What field are you interested in?",
-    "The tech industry is always evolving!",
-    "It's important to find work that you're passionate about!"
-]
-
-about_me_responses = [
-    "I'm a friendly Discord bot here to help!",
-    "I love learning new things and chatting with users!",
-    "My purpose is to make this server more fun and interactive!",
-    "I'm always being updated with new features!"
-]
-
-def get_random_response(responses):
+def load_keywords():
     """
-    Get a random response from a list of predefined responses.
+    Load keywords and responses from the JSON file.
+    
+    Returns:
+        dict: Dictionary of keywords and their responses
+    """
+    try:
+        with open(KEYWORDS_FILE, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError:
+        return {}
+
+def save_keywords(keywords):
+    """
+    Save keywords and responses to the JSON file.
     
     Args:
-        responses (list): List of possible responses
-        
-    Returns:
-        str: Randomly selected response
+        keywords (dict): Dictionary of keywords and their responses
     """
-    return random.choice(responses)
+    with open(KEYWORDS_FILE, 'w') as f:
+        json.dump(keywords, f, indent=4)
 
 class KeywordsAndResponses(commands.Cog):
     """
-    Cog for handling casual conversation commands.
-    Provides friendly responses to various topics like music, pets, books, etc.
+    Cog for managing keywords and custom responses.
+    Allows adding, removing, updating, and listing keywords.
     """
+    
     def __init__(self, bot):
         """
-        Initialize the KeywordsAndResponses Cog.
+        Initialize the Keywords and Responses cog.
         
         Args:
             bot (commands.Bot): The bot instance
         """
         self.bot = bot
+        self.keywords = load_keywords()
+        
+        # Create the command group within the class
+        self.keyword_group = bot.create_group(name="keyword", description="Manage keywords and responses")
 
-    @app_commands.command(name="music", description="Talk about music")
-    async def music(self, interaction: discord.Interaction):
+        # Dynamically add commands to the group
+        self.keyword_group.command(name="add")(self.add_keyword)
+        self.keyword_group.command(name="remove")(self.remove_keyword)
+        self.keyword_group.command(name="update")(self.update_keyword)
+        self.keyword_group.command(name="list")(self.list_keywords)
+
+    async def add_keyword(self, ctx, keyword: str, response: str):
         """
-        Send a random music-related response.
+        Add a new keyword and its response.
         
         Args:
-            interaction (discord.Interaction): The interaction instance
+            ctx (discord.ApplicationContext): The context of the interaction
+            keyword (str): The keyword to add
+            response (str): The response associated with the keyword
         """
-        await interaction.response.send_message(get_random_response(music_responses))
+        try:
+            # Check if keyword already exists
+            if keyword.lower() in self.keywords:
+                await ctx.respond(f"Keyword '{keyword}' already exists. Use /keyword update to modify it.")
+                return
+            
+            # Add keyword to dictionary
+            self.keywords[keyword.lower()] = response
+            save_keywords(self.keywords)
+            
+            await ctx.respond(f"Keyword '{keyword}' added successfully!")
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @app_commands.command(name="pet", description="Talk about pets")
-    async def pet(self, interaction: discord.Interaction):
+    async def remove_keyword(self, ctx, keyword: str):
         """
-        Send a random pet-related response.
+        Remove a keyword.
         
         Args:
-            interaction (discord.Interaction): The interaction instance
+            ctx (discord.ApplicationContext): The context of the interaction
+            keyword (str): The keyword to remove
         """
-        await interaction.response.send_message(get_random_response(pet_responses))
+        try:
+            # Check if keyword exists
+            if keyword.lower() not in self.keywords:
+                await ctx.respond(f"Keyword '{keyword}' not found.")
+                return
+            
+            # Remove keyword from dictionary
+            del self.keywords[keyword.lower()]
+            save_keywords(self.keywords)
+            
+            await ctx.respond(f"Keyword '{keyword}' removed successfully!")
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @app_commands.command(name="book", description="Talk about books")
-    async def book(self, interaction: discord.Interaction):
+    async def update_keyword(self, ctx, keyword: str, new_response: str):
         """
-        Send a random book-related response.
+        Update an existing keyword's response.
         
         Args:
-            interaction (discord.Interaction): The interaction instance
+            ctx (discord.ApplicationContext): The context of the interaction
+            keyword (str): The keyword to update
+            new_response (str): The new response for the keyword
         """
-        await interaction.response.send_message(get_random_response(book_responses))
+        try:
+            # Check if keyword exists
+            if keyword.lower() not in self.keywords:
+                await ctx.respond(f"Keyword '{keyword}' not found. Use /keyword add to create it.")
+                return
+            
+            # Update keyword response
+            self.keywords[keyword.lower()] = new_response
+            save_keywords(self.keywords)
+            
+            await ctx.respond(f"Keyword '{keyword}' updated successfully!")
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @app_commands.command(name="video_games", description="Talk about video games")
-    async def video_games(self, interaction: discord.Interaction):
+    async def list_keywords(self, ctx):
         """
-        Send a random video game-related response.
+        List all current keywords.
         
         Args:
-            interaction (discord.Interaction): The interaction instance
+            ctx (discord.ApplicationContext): The context of the interaction
         """
-        await interaction.response.send_message(get_random_response(video_game_responses))
+        try:
+            # Check if keywords dictionary is empty
+            if not self.keywords:
+                await ctx.respond("No keywords have been added yet.")
+                return
+            
+            # Create a formatted list of keywords
+            keyword_list = "\n".join([f"• {k}: {v}" for k, v in self.keywords.items()])
+            
+            # Send the list of keywords
+            await ctx.respond(f"Current Keywords:\n{keyword_list}")
+        except Exception as e:
+            await ctx.respond(f"An error occurred: {str(e)}")
 
-    @app_commands.command(name="job", description="Talk about jobs")
-    async def job(self, interaction: discord.Interaction):
+    @commands.Cog.listener()
+    async def on_message(self, message):
         """
-        Send a random job-related response.
+        Listener to check for keywords in messages.
         
         Args:
-            interaction (discord.Interaction): The interaction instance
+            message (discord.Message): The message to check
         """
-        await interaction.response.send_message(get_random_response(job_responses))
-
-    @app_commands.command(name="about_me", description="Learn about the bot")
-    async def about_me(self, interaction: discord.Interaction):
-        """
-        Send a random response about the bot.
+        # Ignore messages from the bot itself
+        if message.author == self.bot.user:
+            return
         
-        Args:
-            interaction (discord.Interaction): The interaction instance
-        """
-        await interaction.response.send_message(get_random_response(about_me_responses))
+        # Convert message content to lowercase
+        content = message.content.lower()
+        
+        # Check for keywords
+        for keyword, response in self.keywords.items():
+            if keyword in content:
+                # Randomly choose a response if multiple are available
+                if isinstance(response, list):
+                    response = random.choice(response)
+                
+                await message.channel.send(response)
+                break
 
-async def setup(bot):
+def setup(bot):
     """
-    Set up the KeywordsAndResponses Cog.
+    Set up the Keywords and Responses Cog.
     
     Args:
         bot (commands.Bot): The bot instance
     """
-    await bot.add_cog(KeywordsAndResponses(bot))
+    pass  # Cog is now added in Main.py __init__ method

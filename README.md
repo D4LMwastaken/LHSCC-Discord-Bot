@@ -79,7 +79,7 @@ For running the Discord Bot, here are the minimum specification & recommended sp
   * Easy to add new commands via cogs
   * Modular design for simple maintenance
 
-## Installing D4LM's LHSCC Discord Bot
+## Installing D4LM's LHSCC Discord Bot (outdated)
 
 ### Windows 
 * Install Python [here](https://www.python.org/).
