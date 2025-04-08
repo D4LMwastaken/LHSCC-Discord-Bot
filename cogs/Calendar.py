@@ -5,6 +5,7 @@ Google Calendar integration cog for managing calendar events.
 import os
 import pytz
 import logging
+import asyncio
 
 import discord
 from discord.ext import commands, tasks
@@ -106,48 +107,51 @@ class Calendar(commands.Cog):
             return []
 
 
-    @tasks.loop(time=datetime.strptime('15:00', '%H:%M').time())
+    @tasks.loop(hours=24)
     async def weekly_announcement(self):
-        """Scheduled task that runs every Saturday at 3:00 PM EST."""
+        """
+        Scheduled task that runs every Saturday at 3:00PM EST.
+        """
         est = pytz.timezone('US/Eastern')
         current_time = datetime.now(est)
-
-        if current_time.weekday() != 5:  # 5 is Saturday
+        
+        # Check if it's Saturday
+        if current_time.weekday() != 5: # != is not equal to...
             return
-
-        events = await self._get_events(7)
-        if not events:
+        
+        #Check if it's approimately 3:00PM (Small time window...)
+        if not (current_time.hour == 15 and current_time.minute < 15):
             return
-
-        embed = discord.Embed(
-            title="📅 Upcoming Events This Week",
-            description="Here are the events scheduled for the next 7 days:",
-            color=discord.Color.blue(),
-            timestamp=current_time
-        )
-
-        for event in events:
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            start_time = datetime.fromisoformat(start.replace('Z', '+00:00')).astimezone(est)
-            formatted_date = start_time.strftime("%A, %B %d at %I:%M %p %Z")
-            embed.add_field(
-                name=event.get('summary', 'Untitled Event'),
-                value=f"📆 {formatted_date}\n{event.get('description', 'No description available')}",
-                inline=False
-            )
-
-        embed.set_footer(text="Next update will be next Saturday at 3:00 PM EST")
-
-        for guild in self.bot.guilds:
-            announcements_channel = discord.utils.get(guild.text_channels, name="announcements")
-            if announcements_channel:
-                await announcements_channel.send("@everyone", embed=embed)
-                logging.info(f"Sent weekly calendar announcement in {guild.name}")
-
+        
+        logging.info("Running Saturday weekly announcemnt")
 
     @weekly_announcement.before_loop
     async def before_weekly_announcement(self):
         await self.bot.wait_until_ready()
+        
+        # Wait until next run time
+        est = pytz.timezone('US/Eastern')
+        now = datetime.now(est)
+        
+        # Calculate days until next Saturday
+        days_until_saturday = (5 - now.weekday()) % 7
+        
+        # If it's Saturday but after 3 PM, wait until next Saturday
+        if days_until_saturday == 0 and now.hour >= 15:
+            days_until_saturday = 7
+                
+        target_time = now.replace(
+            day=now.day + days_until_saturday,
+            hour=15, 
+            minute=0, 
+            second=0, 
+            microsecond=0
+            )
+            
+        seconds_to_wait = (target_time - now).total_seconds()
+        if seconds_to_wait > 0:
+            logging.info(f"Waiting {seconds_to_wait/3600:.1f} hours until next Saturday 3 PM")
+            await asyncio.sleep(seconds_to_wait)
 
     @commands.slash_command(name="upcoming", guild_ids=GUILD_IDS)
     async def upcoming_events(self, ctx, days: Optional[int] = 7):
@@ -262,7 +266,7 @@ class Calendar(commands.Cog):
         # Find the announcements channel and send the message
         announcements_channel = discord.utils.get(ctx.guild.text_channels, name="announcements")
         if announcements_channel:
-            await announcements_channel.send("@everyone", embed=embed)
+            await announcements_channel.send("<@&1236351432865611968>", embed=embed) # Changed to only send it to the active group...
             await ctx.respond("Weekly announcement sent successfully!", ephemeral=True)
         else:
             await ctx.respond("Could not find #announcements channel.", ephemeral=True)

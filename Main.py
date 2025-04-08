@@ -42,7 +42,7 @@ class Bot(commands.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.members = True  # Enable member events
-        super().__init__(command_prefix='!', intents=intents, application_id=APPLICATION_ID)
+        super().__init__(command_prefix='unused_prefix_', intents=intents, application_id=APPLICATION_ID) # Yay, no more !help no more and Jake won't be made...
         
         # Dynamically find all cogs in the cogs directory
         self.initial_extensions = []
@@ -268,8 +268,8 @@ async def bye(interaction: discord.Interaction):
 @bot.slash_command(name="version", description="Get the current version of the bot", guild_ids=GUILD_IDS)
 async def version(interaction: discord.Interaction):
     """Displays current bot version information"""
-    Version = "3.2"
-    DateUpdated = "3/19/2025"
+    Version = "3.3"
+    DateUpdated = "4/8/2025"
     Language = "Python"
     Discord_API_Wrapper = "Pycord"
     Dev = "D4LM"
@@ -281,11 +281,13 @@ async def version(interaction: discord.Interaction):
 @bot.slash_command(name="new_stuff", description="See what's new in the latest update", guild_ids=GUILD_IDS)
 async def new_stuff(interaction: discord.Interaction):
     """Shows changelog and updates for the latest version"""
-    Version = "3.0"
-    UpdatedItems = ("Changes in version 3.2:\n"
-                "* Security fixes\n"
-                "* Calendar API now uses service account so that calendar commands can run forever(hopefully)...\n"
-                "* General cleanup...\n")
+    Version = "3.3"
+    UpdatedItems = ("Changes in version 3.3:\n"
+                "* Bug Fixes...\n" +
+                "* Removal of !help as Jake requested...\n" +
+                "* Fixed keywords.json...\n" +
+                "* Updated Gemini model to Gemini 2.5 Pro (experimental)"
+    )
     await interaction.response.send_message("For version " + Version + ".\nHere is the Changelog: " + UpdatedItems)
 
 @bot.slash_command(name="self_destruct", description="Shut down the bot dramatically", guild_ids=GUILD_IDS)

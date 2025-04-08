@@ -19,7 +19,7 @@ GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
 # Configure Gemini AI
 genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-pro-exp-02-05')
+model = genai.GenerativeModel('gemini-2.5-pro-exp-03-25')
 
 def gemini_generate(prompt):
     """
