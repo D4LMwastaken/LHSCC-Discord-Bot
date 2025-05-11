@@ -147,7 +147,8 @@ class Bot(commands.Bot):
                     "The message should be friendly, encouraging, and include:"
                     "- A personalized greeting"
                     "- Encouragement to explore the server"
-                    "- Suggestion to check out #announcements and #roles"
+                    "- Suggestion to check out #announcements"
+                    "- Requirement to read #readme and #rules"
                     "- Invitation to introduce themselves"
                     "Keep the tone friendly, supportive, and exciting for a high school coding club. "
                     "Limit the message to 250 words."
@@ -268,8 +269,8 @@ async def bye(interaction: discord.Interaction):
 @bot.slash_command(name="version", description="Get the current version of the bot", guild_ids=GUILD_IDS)
 async def version(interaction: discord.Interaction):
     """Displays current bot version information"""
-    Version = "3.3"
-    DateUpdated = "4/8/2025"
+    Version = "3.4"
+    DateUpdated = "5/10/2025"
     Language = "Python"
     Discord_API_Wrapper = "Pycord"
     Dev = "D4LM"
@@ -281,12 +282,10 @@ async def version(interaction: discord.Interaction):
 @bot.slash_command(name="new_stuff", description="See what's new in the latest update", guild_ids=GUILD_IDS)
 async def new_stuff(interaction: discord.Interaction):
     """Shows changelog and updates for the latest version"""
-    Version = "3.3"
-    UpdatedItems = ("Changes in version 3.3:\n"
+    Version = "3.4"
+    UpdatedItems = ("Changes in version 3.4:\n"
                 "* Bug Fixes...\n" +
-                "* Removal of !help as Jake requested...\n" +
-                "* Fixed keywords.json...\n" +
-                "* Updated Gemini model to Gemini 2.5 Pro (experimental)"
+                "* New Gemini Command!\n"
     )
     await interaction.response.send_message("For version " + Version + ".\nHere is the Changelog: " + UpdatedItems)
 

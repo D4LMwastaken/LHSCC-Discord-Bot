@@ -9,16 +9,16 @@
         "Goodbye!",
         "Take care!"
     ],
-    "Jake is a failure!": [
+    "jake=failure": [
       	"Agreed!" 
     ],
-    "I use Fedora btw": [
+    "linux": [
       "Welp, I am running on Ubuntu!",
       "Lol, I use Arch btw!",
       "Lol, I use Gentoo btw!",
       "Haha, I use Free BSD by the way!"
     ],
-    "Jake does not have an girlfriend!": [
+    "jake=no_gf": [
     	"Agreed, he is a failure!"
     ]
 }
